@@ -1,0 +1,14 @@
+skills:
+  - name: fund-weekly-report
+    purpose: 自动生成基金持仓周报，含净值、盈亏、新闻、规则提示
+    complexity: high
+    research_phase: General
+    capability_tags: [fund-analysis, portfolio-tracking, weekly-report]
+    aliases: ["基金周报", "持仓报告", "fund weekly", "基金盈亏"]
+    examples:
+      - "生成基金报告"
+      - "查看持仓情况"
+      - "/fund:report"
+    depends_on: []
+    status: active
+    created: 2026-06-28

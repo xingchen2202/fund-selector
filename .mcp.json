@@ -1,0 +1,28 @@
+{
+  "mcpServers": {
+    "finance-agent": {
+      "command": "C:\\Users\\22218\\Desktop\\fund-selector\\FinanceAgent\\venv\\Scripts\\python.exe",
+      "args": ["C:\\Users\\22218\\Desktop\\fund-selector\\FinanceAgent\\src\\finance_agent\\server.py"],
+      "env": {
+        "PYTHONPATH": "C:\\Users\\22218\\Desktop\\fund-selector\\FinanceAgent\\src",
+        "DATA_DIR": "C:\\Users\\22218\\Desktop\\fund-selector\\FinanceAgent\\data",
+        "PYTHONIOENCODING": "utf-8",
+        "PYTHONUNBUFFERED": "1",
+        "LOGGING_LEVEL": "WARNING",
+        "MCP_LOG_FILE": ""
+      }
+    },
+    "cn-financial": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["-m", "cn_financial_mcp"],
+      "cwd": "C:\\Users\\22218\\Desktop\\fund-selector\\cn-financial-mcp\\src"
+    },
+    "cn-mutual-fund": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["-m", "cn_mutual_fund"],
+      "cwd": "C:\\Users\\22218\\Desktop\\fund-selector\\cn-mutual-fund\\src"
+    }
+  }
+}
