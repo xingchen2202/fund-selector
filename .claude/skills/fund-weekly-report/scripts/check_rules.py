@@ -3,7 +3,7 @@
 check_rules.py — 检查规则触发
 ━━━━━━━━━━━━━━━━━━━━
 读取 calculate_pnl.py 的输出（JSON），
-根据 references/rules-definitions.md 中的阈值检查规则。
+根据 ../_shared/rules-definitions.md 中的阈值检查规则。
 输出 JSON 到 stdout。
 
 用法:

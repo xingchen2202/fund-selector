@@ -4,6 +4,9 @@ portfolio.json
 # 生成的报告文件（不上传）
 fund-reports/
 
+# 共享知识库（上传到GitHub）
+# .claude/skills/_shared/  ← 允许上传
+
 # 大数据文件
 *.xlsx
 

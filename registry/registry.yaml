@@ -12,3 +12,16 @@ skills:
     depends_on: []
     status: active
     created: 2026-06-28
+
+  - name: fund-recommend
+    purpose: 基于宏观+组合约束+新闻，筛选候选基金并分析影响
+    complexity: high
+    capability_tags: [fund-screening, macro-analysis, portfolio-fit, news-analysis]
+    aliases: ["推荐基金", "基金筛选", "fund recommend", "有什么基金可以买"]
+    examples:
+      - "推荐基金"
+      - "有什么基金值得考虑"
+      - "/fund:recommend"
+    depends_on: [fund-weekly-report]
+    status: active
+    created: 2026-06-28

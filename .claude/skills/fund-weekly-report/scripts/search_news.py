@@ -2,7 +2,7 @@
 """
 search_news.py — 搜索板块新闻
 ━━━━━━━━━━━━━━━━━━━━
-读取 references/sector-map.md 中的板块映射，
+读取 ../_shared/sector-map.md 中的板块映射，
 使用 Tavily API 搜索各板块近7天新闻。
 输出 JSON 到 stdout。
 

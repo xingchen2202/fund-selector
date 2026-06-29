@@ -91,7 +91,20 @@
       "PowerShell($env:PYTHONIOENCODING='utf-8'; python pipeline_runner.py)",
       "PowerShell(New-Item *)",
       "Bash(gh auth *)",
-      "Bash(winget install *)"
+      "Bash(winget install *)",
+      "WebFetch(domain:api.github.com)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\22218\\\\Desktop\\\\fund-selector\\\\.claude\\\\skills\" -Directory | ForEach-Object { $name = $_.Name; $skillFile = Join-Path $_.FullName \"SKILL.md\"; $exists = Test-Path $skillFile; $size = if \\($exists\\) { \\(Get-Item $skillFile\\).Length } else { 0 }; Write-Host \"$name | exists=$exists | ${size}B\" })",
+      "Bash(Measure-Object)",
+      "Bash(Select-Object -ExpandProperty Count)",
+      "PowerShell(\\(Get-ChildItem -Path \"C:\\\\Users\\\\22218\\\\Desktop\\\\fund-selector\\\\.claude\\\\skills\\\\cn-equity-research\" -Recurse -File -ErrorAction SilentlyContinue | Measure-Object\\).Count; \\(Get-ChildItem -Path \"C:\\\\Users\\\\22218\\\\Desktop\\\\fund-selector\\\\.claude\\\\skills\\\\cn-financial-analysis\" -Recurse -File -ErrorAction SilentlyContinue | Measure-Object\\).Count)",
+      "Bash(Select-Object -First 5)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\22218\\\\Desktop\\\\fund-selector\\\\.claude\\\\skills\" -Directory | ForEach-Object { $skillFile = Join-Path $_.FullName \"SKILL.md\"; if \\(Test-Path $skillFile\\) { $name = $_.Name; $frontmatter = Get-Content $skillFile -TotalCount 10 | Where-Object { $_ -match '^name:|^description:' }; Write-Host \"=== $name ===\"; $frontmatter | ForEach-Object { Write-Host $_ } } })",
+      "Bash(Get-Content *)",
+      "Bash(Remove-Item -Force)",
+      "PowerShell(Get-Process *)",
+      "PowerShell(Stop-Process *)",
+      "PowerShell(Start-Process -FilePath \"python\" -ArgumentList \"-m\", \"cn_mutual_fund\" -WorkingDirectory \"C:\\\\Users\\\\22218\\\\Desktop\\\\fund-selector\\\\cn-mutual-fund\\\\src\" -WindowStyle Hidden)",
+      "Bash(Copy-Item *)"
     ]
   },
   "enableAllProjectMcpServers": true,
