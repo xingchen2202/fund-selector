@@ -2,16 +2,33 @@
 """
 generate_recommend.py — 整合所有数据，生成推荐报告
 ━━━━━━━━━━━━━━━━━━━━
-将 Step 0-6 的输出整合为结构化报告并保存。
+支持两种模式：
+  1. --pipeline: 从 _pipeline_data.json 读取完整数据（默认）
+  2. <data_json_file>: 从指定 JSON 文件读取（向后兼容）
 """
 import json
 import sys
+import io
 from datetime import datetime
 from pathlib import Path
 
+# Windows GBK 兼容性
+if sys.platform == "win32":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
+
 SCRIPT_DIR = Path(__file__).parent
 SKILL_DIR = SCRIPT_DIR.parent
-REPORTS_DIR = SKILL_DIR.parent.parent / "fund-reports"
+REPORTS_DIR = SKILL_DIR.parent.parent.parent / "fund-reports"
+PIPELINE_FILE = REPORTS_DIR / "_pipeline_data.json"
+
+
+def read_pipeline():
+    """读取 pipeline 数据总线"""
+    if PIPELINE_FILE.exists():
+        with open(PIPELINE_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
 
 
 def generate_report(data: dict) -> str:
@@ -47,23 +64,54 @@ def generate_report(data: dict) -> str:
         lines.append(f"不可用指标：{', '.join(unavailable)}")
     lines.append("")
 
-    # 最终候选基金
+    # 最终候选基金（合并 validated_funds + var_impacts + news）
     candidates = data.get("candidates", [])
+    validated_funds = data.get("validated_funds", {})
+    var_impacts = data.get("var_impacts", {})
+    news_data = data.get("news", {})
+
     lines.append(f"【最终候选基金】（{len(candidates)} 只）")
     lines.append("━" * 40)
 
     for c in candidates:
-        lines.append(f"▌ {c.get('name', '未知')}（{c.get('code', 'N/A')}）")
+        code = c.get("code", "N/A")
+        name = c.get("name", "未知")
+
+        # 从 validated_funds 获取详细数据
+        fund_detail = {}
+        if isinstance(validated_funds, dict):
+            # 支持两种结构：{"verified": [{...}, ...]} 或 {code: {...}}
+            verified_list = validated_funds.get("verified", [])
+            if isinstance(verified_list, list):
+                for f in verified_list:
+                    if f.get("code") == code:
+                        fund_detail = f
+                        break
+            elif isinstance(verified_list, dict):
+                fund_detail = verified_list.get(code, {})
+
+        # 从 var_impacts 获取 VaR 数据
+        var_info = var_impacts.get(code, {}) if isinstance(var_impacts, dict) else {}
+
+        # 从 news 获取新闻数据
+        news_info = news_data.get(code, {}) if isinstance(news_data, dict) else {}
+
+        lines.append(f"▌ {name}（{code}）")
         lines.append(f"[数据层]")
-        lines.append(f"  规模：{c.get('scale', 'N/A')} 亿 | 经理：{c.get('manager', 'N/A')} | 总费率：{c.get('fee', 'N/A')}")
-        lines.append(f"  近 1 年：{c.get('return_1y', 'N/A')} | 近 3 年：{c.get('return_3y', 'N/A')} | 最大回撤：{c.get('max_drawdown', 'N/A')}")
+        scale = fund_detail.get("scale_wan")
+        scale_str = f"{scale / 10000:.2f} 亿" if scale else "N/A"
+        lines.append(f"  规模：{scale_str} 经理：{fund_detail.get('manager') or '待补充'} | 总费率：{fund_detail.get('fee') or '待补充'}")
+        lines.append(f"  近 1 年：{fund_detail.get('return_1y') or '待补充'} | 近 3 年：{fund_detail.get('return_3y') or '待补充'} | 最大回撤：{fund_detail.get('max_drawdown') or '待补充'}")
         lines.append(f"[分析层]")
-        lines.append(f"  {c.get('analysis', '无分析数据')}")
+        lines.append(f"  板块：{c.get('sector', '未知')} | 综合评分：{c.get('score', 'N/A')}")
         lines.append(f"[VaR 影响]")
-        lines.append(f"  加入 5% 仓位预计增加 VaR：{c.get('marginal_var', 'N/A')} 元")
+        marginal_var = var_info.get("marginal_var", "N/A")
+        lines.append(f"  加入 5% 仓位预计增加 VaR：{marginal_var} 元")
         lines.append(f"[新闻背景]")
-        lines.append(f"  利多：{c.get('bullish_news', '无')}")
-        lines.append(f"  利空：{c.get('bearish_news', '无')}")
+        bullish = news_info.get("bullish", "无")
+        bearish = news_info.get("bearish", "无")
+        lines.append(f"  利多：{bullish}")
+        lines.append(f"  利空：{bearish}")
 
         if c.get("perilla"):
             lines.append(f"[紫苏叶视角]")
@@ -85,23 +133,41 @@ def generate_report(data: dict) -> str:
     lines.append("- 持仓数据滞后：一个季度")
     lines.append("- 本报告不构成投资建议")
     lines.append("")
+
     lines.append("=== 报告结束 ===")
 
     return "\n".join(lines)
 
 
 def main():
-    if len(sys.argv) < 2:
-        print(json.dumps({"error": "用法: generate_recommend.py <data_json_file>"}))
-        sys.exit(1)
+    use_pipeline = False
+    data_file = None
 
-    data_file = Path(sys.argv[1])
-    if not data_file.exists():
-        print(json.dumps({"error": f"数据文件不存在: {data_file}"}))
-        sys.exit(1)
+    # 解析命令行参数
+    if "--pipeline" in sys.argv:
+        use_pipeline = True
+    elif len(sys.argv) >= 2 and not sys.argv[1].startswith("-"):
+        data_file = Path(sys.argv[1])
 
-    with open(data_file, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    if use_pipeline:
+        # 从数据总线读取
+        if not PIPELINE_FILE.exists():
+            print(json.dumps({"error": f"pipeline 文件不存在: {PIPELINE_FILE}"}))
+            print("[提示] 请先运行 screen_candidates.py 和 validate_funds.py", file=sys.stderr)
+            sys.exit(1)
+        with open(PIPELINE_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        print(f"[INFO] 从 pipeline 读取数据，keys: {list(data.keys())}", file=sys.stderr)
+    elif data_file:
+        # 从指定文件读取（向后兼容）
+        if not data_file.exists():
+            print(json.dumps({"error": f"数据文件不存在: {data_file}"}))
+            sys.exit(1)
+        with open(data_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    else:
+        print(json.dumps({"error": "用法: generate_recommend.py --pipeline | generate_recommend.py <data_json_file>"}))
+        sys.exit(1)
 
     report = generate_report(data)
 
