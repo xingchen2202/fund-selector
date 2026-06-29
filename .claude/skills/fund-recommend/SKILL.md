@@ -182,13 +182,37 @@ python ${CLAUDE_SKILL_DIR}\scripts\perilla_analysis.py
 
 ---
 
-## Step 7：生成报告
+## Step 7：生成报告（P3修复：流水线模式）
 
-运行脚本整合所有数据：
+按顺序运行以下 4 个脚本，每个脚本读取/写入 `_pipeline_data.json` 数据总线：
 
+### 7.1 验证候选基金 → 写入 pipeline["validated_funds"]
 ```bash
-python ${CLAUDE_SKILL_DIR}\scripts\generate_recommend.py
+python ${CLAUDE_SKILL_DIR}\scripts\validate_funds.py
 ```
+
+### 7.2 计算 VaR 影响 → 写入 pipeline["var_impacts"]
+```bash
+python ${CLAUDE_SKILL_DIR}\scripts\calc_var_impact.py
+```
+
+### 7.3 搜索新闻 → 写入 pipeline["news"]
+```bash
+python ${CLAUDE_SKILL_DIR}\scripts\search_news.py
+```
+
+### 7.4 生成最终报告（从 pipeline 读取完整数据）
+```bash
+python ${CLAUDE_SKILL_DIR}\scripts\generate_recommend.py --pipeline
+```
+
+**数据总线文件**: `fund-reports/_pipeline_data.json`
+- `load_portfolio.py` → 写入 `constraints`
+- `screen_candidates.py` → 写入 `candidates`
+- `validate_funds.py` → 写入 `validated_funds`
+- `calc_var_impact.py` → 写入 `var_impacts`
+- `search_news.py` → 写入 `news`
+- `generate_recommend.py --pipeline` → 读取以上所有字段
 
 **报告结构**（严格遵循）:
 

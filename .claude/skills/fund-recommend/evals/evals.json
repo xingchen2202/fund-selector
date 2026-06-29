@@ -146,6 +146,55 @@
           "description": "新闻应包含中文日期标注"
         }
       ]
+    },
+    {
+      "id": "B3-data-flow",
+      "description": "P3：推荐报告必须包含完整的VaR和新闻数据",
+      "prompt": "运行/fund:recommend，检查报告正文",
+      "assertions": [
+        {
+          "type": "not_contains",
+          "value": "新闻：无",
+          "description": "报告中不应出现「新闻：无」"
+        },
+        {
+          "type": "not_contains",
+          "value": "VaR影响：无",
+          "description": "报告中不应出现「VaR影响：无」"
+        },
+        {
+          "type": "contains",
+          "value": "利多",
+          "description": "报告应包含利多新闻"
+        },
+        {
+          "type": "contains",
+          "value": "利空",
+          "description": "报告应包含利空新闻"
+        },
+        {
+          "type": "contains",
+          "value": "VaR",
+          "description": "报告应包含VaR数值"
+        }
+      ]
+    },
+    {
+      "id": "B4-return-label",
+      "description": "P4：成立不满3年的基金不应标注近3年",
+      "prompt": "验证recommend报告中020362的收益标注",
+      "assertions": [
+        {
+          "type": "not_contains",
+          "value": "近3年：+51.71%",
+          "description": "020362不应标注近3年收益"
+        },
+        {
+          "type": "contains",
+          "value": "成立以来",
+          "description": "成立不满3年的基金应标注成立以来"
+        }
+      ]
     }
   ]
 }

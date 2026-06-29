@@ -29,6 +29,7 @@ def main():
     }
     print(json.dumps(template, ensure_ascii=False, indent=2))
     print("\n[提示] 此脚本为模板。实际执行时，请由 Claude 直接调用 MCP 工具填充数据。")
+    print("填充后，Claude 应将 macro 数据写入 _pipeline_data.json['macro']")
 
 
 if __name__ == "__main__":

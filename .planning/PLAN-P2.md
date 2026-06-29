@@ -1,5 +1,7 @@
 # P2 修复任务：新闻全部返回英文
 
+## 状态：✅ 已完成 (iteration-2)
+
 ## 任务概述
 
 **问题**：`search_news.py`（fund-recommend 和 fund-weekly-report）的 Tavily 搜索返回全部英文新闻，且可能混入超过7天的旧新闻。  

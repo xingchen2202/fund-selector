@@ -174,6 +174,20 @@ def main():
 
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
+    # P3修复：写入 pipeline
+    try:
+        pipeline_path = PROJECT_ROOT / "fund-reports" / "_pipeline_data.json"
+        pipeline = {}
+        if pipeline_path.exists():
+            with open(pipeline_path, "r", encoding="utf-8") as f:
+                pipeline = json.load(f)
+        pipeline["candidates"] = final_top
+        with open(pipeline_path, "w", encoding="utf-8") as f:
+            json.dump(pipeline, f, ensure_ascii=False, indent=2)
+        print(f"[INFO] 已写入 pipeline['candidates'] ({len(final_top)} 只)", file=sys.stderr)
+    except Exception as e:
+        print(f"[WARN] 写入 pipeline 失败: {e}", file=sys.stderr)
+
 
 if __name__ == "__main__":
     main()

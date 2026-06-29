@@ -101,9 +101,37 @@ def generate_report(data: dict) -> str:
         scale = fund_detail.get("scale_wan")
         scale_str = f"{scale / 10000:.2f} 亿" if scale else "N/A"
         lines.append(f"  规模：{scale_str} 经理：{fund_detail.get('manager') or '待补充'} | 总费率：{fund_detail.get('fee') or '待补充'}")
-        lines.append(f"  近 1 年：{fund_detail.get('return_1y') or '待补充'} | 近 3 年：{fund_detail.get('return_3y') or '待补充'} | 最大回撤：{fund_detail.get('max_drawdown') or '待补充'}")
+
+        # P4修复：收益标注使用正确的标签
+        return_1y = fund_detail.get("return_1y")
+        return_1y_label = fund_detail.get("return_1y_label", "近1年")
+        if return_1y is None:
+            return_1y_str = "待补充"
+        elif isinstance(return_1y, str):
+            return_1y_str = return_1y
+        else:
+            return_1y_str = f"{return_1y:+.2f}%"
+
+        return_3y = fund_detail.get("return_3y")
+        return_3y_label = fund_detail.get("return_3y_label", "近3年")
+        if return_3y is None:
+            return_3y_str = "待补充"
+        elif isinstance(return_3y, str):
+            return_3y_str = return_3y
+        else:
+            return_3y_str = f"{return_3y:+.2f}%"
+
+        lines.append(f"  {return_1y_label}：{return_1y_str} | {return_3y_label}：{return_3y_str} | 最大回撤：{fund_detail.get('max_drawdown') or '待补充'}")
+
+        # P4修复：如果有成立日期，显示在分析层
+        est_date = fund_detail.get("establishment_date")
+        age_years = fund_detail.get("age_years")
+        age_months = fund_detail.get("age_months")
         lines.append(f"[分析层]")
-        lines.append(f"  板块：{c.get('sector', '未知')} | 综合评分：{c.get('score', 'N/A')}")
+        base_info = f"  板块：{c.get('sector', '未知')} | 综合评分：{c.get('score', 'N/A')}"
+        if est_date and age_years is not None:
+            base_info += f" | 成立于{est_date}（{age_years}年{age_months}月）"
+        lines.append(base_info)
         lines.append(f"[VaR 影响]")
         marginal_var = var_info.get("marginal_var", "N/A")
         lines.append(f"  加入 5% 仓位预计增加 VaR：{marginal_var} 元")

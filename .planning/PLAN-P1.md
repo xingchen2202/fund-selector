@@ -1,5 +1,7 @@
 # P1 修复任务：规模筛选失效
 
+## 状态：✅ 已完成 (iteration-2)
+
 ## 任务概述
 
 **问题**：`screen_candidates.py` 未按 `rule-definitions.md` 的规则排除规模 < 2 亿的基金。  
