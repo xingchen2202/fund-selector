@@ -1,7 +1,7 @@
 {
   "skill": "fund-recommend",
-  "version": "iteration-2",
-  "description": "P1 规模筛选修复后的自动化断言",
+  "version": "iteration-3",
+  "description": "P1+P2 修复后的自动化断言",
   "evals": [
     {
       "id": "B1-scale-filter",
@@ -32,7 +32,7 @@
     },
     {
       "id": "B2-scale-exclude-log",
-      "description": "P1：排除日志应出现在输出中",
+      "description": "P1：排除日志应出现在 stderr 输出中",
       "prompt": "运行 screen_candidates.py，检查 stderr 输出",
       "assertions": [
         {
@@ -61,6 +61,67 @@
           "type": "source_contains",
           "value": "20000",
           "description": "阈值应为 20000（万元）"
+        }
+      ]
+    },
+    {
+      "id": "B4-news-chinese",
+      "description": "P2：新闻搜索词必须全部为中文",
+      "prompt": "检查 search_news.py 源码中的 SECTOR_QUERIES",
+      "assertions": [
+        {
+          "type": "source_not_contains",
+          "value": "NASDAQ US tech",
+          "description": "搜索词不应包含英文 'NASDAQ US tech'"
+        },
+        {
+          "type": "source_not_contains",
+          "value": "gold price outlook",
+          "description": "搜索词不应包含英文 'gold price outlook'"
+        },
+        {
+          "type": "source_not_contains",
+          "value": "Hang Seng tech",
+          "description": "搜索词不应包含英文 'Hang Seng tech'"
+        },
+        {
+          "type": "source_contains",
+          "value": "美国纳斯达克",
+          "description": "纳斯达克板块应使用中文搜索词"
+        },
+        {
+          "type": "source_contains",
+          "value": "黄金市场",
+          "description": "黄金板块应使用中文搜索词"
+        }
+      ]
+    },
+    {
+      "id": "B5-news-days-param",
+      "description": "P2：Tavily搜索必须传入 days=7",
+      "prompt": "检查 search_news.py 源码中 tavily 调用",
+      "assertions": [
+        {
+          "type": "source_contains",
+          "value": "days=7",
+          "description": "Tavily搜索调用必须包含 days=7 参数"
+        }
+      ]
+    },
+    {
+      "id": "B6-news-time-check",
+      "description": "P2：输出必须包含发布时间检查",
+      "prompt": "检查 search_news.py 源码",
+      "assertions": [
+        {
+          "type": "source_contains",
+          "value": "published_date",
+          "description": "输出应包含 published_date 字段"
+        },
+        {
+          "type": "source_contains",
+          "value": "时间超期",
+          "description": "应标注超期新闻"
         }
       ]
     }
