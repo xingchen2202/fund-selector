@@ -124,6 +124,28 @@
           "description": "应标注超期新闻"
         }
       ]
+    },
+    {
+      "id": "B2-chinese-news",
+      "description": "P2：新闻必须为中文内容，且在7天内",
+      "prompt": "运行/fund:report或/fund:recommend，检查新闻板块",
+      "assertions": [
+        {
+          "type": "not_contains",
+          "value": "As of June 2026",
+          "description": "报告中不应出现英文新闻开头"
+        },
+        {
+          "type": "not_contains",
+          "value": "Goldman Sachs predicts",
+          "description": "报告中不应出现英文机构名预测语"
+        },
+        {
+          "type": "contains",
+          "value": "2026年6月",
+          "description": "新闻应包含中文日期标注"
+        }
+      ]
     }
   ]
 }
