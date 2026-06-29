@@ -1,0 +1,68 @@
+{
+  "skill": "fund-recommend",
+  "version": "iteration-2",
+  "description": "P1 规模筛选修复后的自动化断言",
+  "evals": [
+    {
+      "id": "B1-scale-filter",
+      "description": "P1：规模筛选必须排除规模<2亿的基金",
+      "prompt": "运行/fund:recommend，检查最终报告",
+      "assertions": [
+        {
+          "type": "not_contains",
+          "value": "44.81万",
+          "description": "报告中不应出现44.81万规模的基金（024120）"
+        },
+        {
+          "type": "not_contains",
+          "value": "3877.78万",
+          "description": "报告中不应出现3877万规模的基金（002214）"
+        },
+        {
+          "type": "not_contains",
+          "value": "744.35万",
+          "description": "报告中不应出现744万规模的基金（020362）"
+        },
+        {
+          "type": "contains",
+          "value": "规模",
+          "description": "报告应包含规模信息或排除日志"
+        }
+      ]
+    },
+    {
+      "id": "B2-scale-exclude-log",
+      "description": "P1：排除日志应出现在输出中",
+      "prompt": "运行 screen_candidates.py，检查 stderr 输出",
+      "assertions": [
+        {
+          "type": "stderr_contains",
+          "value": "EXCLUDE",
+          "description": "stderr 应包含 EXCLUDE 日志行"
+        },
+        {
+          "type": "stderr_contains",
+          "value": "2亿",
+          "description": "排除原因应提及2亿阈值"
+        }
+      ]
+    },
+    {
+      "id": "B3-scale-threshold-config",
+      "description": "P1：规模阈值应可配置",
+      "prompt": "检查 screen_candidates.py 源码",
+      "assertions": [
+        {
+          "type": "source_contains",
+          "value": "SCALE_THRESHOLD_WAN",
+          "description": "源码应定义 SCALE_THRESHOLD_WAN 常量"
+        },
+        {
+          "type": "source_contains",
+          "value": "20000",
+          "description": "阈值应为 20000（万元）"
+        }
+      ]
+    }
+  ]
+}
