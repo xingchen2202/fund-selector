@@ -94,19 +94,30 @@ def generate_report(pnl_data, news_data, alerts, output_dir):
 
     lines.append("")
 
-    # ── 板块新闻摘要 ──
+    # ── 板块新闻摘要（P6修复：支持新格式） ──
     if news_data:
         lines.append("【板块新闻摘要】")
-        for item in news_data:
-            sector = item.get("sector", "未知")
-            summary_text = item.get("summary", "无数据")
-            lines.append(f"[{sector}] {summary_text}")
+        # 新格式：dict of {sector: {positive: [], negative: []}}
+        if isinstance(news_data, dict):
+            for sector, data in news_data.items():
+                if isinstance(data, dict):
+                    pos = "；".join(data.get("positive", [])[:2])
+                    neg = "；".join(data.get("negative", [])[:2])
+                    lines.append(f"[{sector}] 利多: {pos} | 利空: {neg}")
+                else:
+                    lines.append(f"[{sector}] {data}")
+        # 旧格式：list of dicts
+        elif isinstance(news_data, list):
+            for item in news_data:
+                sector = item.get("sector", "未知")
+                summary_text = item.get("summary", "无数据")
+                lines.append(f"[{sector}] {summary_text}")
         lines.append("")
 
     # ── 数据说明 ──
     lines.append("【数据说明】")
     lines.append(f"净值来源：天天基金网（AKShare）")
-    lines.append(f"新闻来源：Tavily（如可用）")
+    lines.append(f"新闻来源：东方财富（AKShare）")
     lines.append(f"生成时间：{datetime_str}")
     lines.append("本报告仅供参考，不构成投资建议")
 

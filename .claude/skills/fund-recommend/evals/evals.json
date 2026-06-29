@@ -232,6 +232,33 @@
           "description": "报告应包含基金经理信息"
         }
       ]
+    },
+    {
+      "id": "B6-chinese-news",
+      "description": "P6：新闻必须为中文内容，且来自中文数据源",
+      "prompt": "运行/fund:report，检查板块新闻摘要",
+      "assertions": [
+        {
+          "type": "not_contains",
+          "value": "China's central bank announced",
+          "description": "不应出现英文新闻内容"
+        },
+        {
+          "type": "not_contains",
+          "value": "As of June 2026",
+          "description": "不应出现英文时间标注"
+        },
+        {
+          "type": "not_contains",
+          "value": "Goldman Sachs",
+          "description": "不应出现英文机构名"
+        },
+        {
+          "type": "contains",
+          "value": "银行",
+          "description": "银行板块新闻应包含中文'银行'关键词"
+        }
+      ]
     }
   ]
 }
