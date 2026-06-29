@@ -26,6 +26,49 @@ SECTOR_MAP = {
     "013279": "均衡", "004503": "债券固收", "012349": "港股",
 }
 
+# P6修复：基金名称关键词 → 板块推断
+# 当代码不在 SECTOR_MAP 中时，根据基金名称推断板块
+SECTOR_NAME_KEYWORDS = {
+    "银行": ["银行", "金融"],
+    "保险": ["保险"],
+    "证券": ["证券", "券商"],
+    "半导体": ["半导体", "芯片", "集成电路"],
+    "人工智能": ["人工智能", "AI", "智能"],
+    "科技成长": ["科技", "成长", "新经济"],
+    "黄金": ["黄金", "贵金属", "金价"],
+    "有色": ["有色", "金属", "矿业"],
+    "港股": ["港股", "恒生"],
+    "美股纳指": ["纳斯达克", "美股", "QDII"],
+    "科创板": ["科创板", "科创"],
+    "新能源": ["新能源", "电动车", "光伏"],
+    "医药": ["医药", "医疗", "健康"],
+    "消费": ["消费", "白酒", "食品"],
+    "债券固收": ["债券", "固收", "中短债"],
+    "均衡": ["均衡", "灵活配置", "混合"],
+    "FOF": ["FOF", "基金中基金"],
+    "军工": ["军工", "国防"],
+    "地产": ["地产", "房地产"],
+    "环保": ["环保", "碳中和"],
+    "汽车": ["汽车", "新能源车"],
+    "电力": ["电力", "电网"],
+    "传媒": ["传媒", "游戏", "动漫"],
+    "农业": ["农业", "养殖"],
+}
+
+def infer_sector_by_name(fund_name):
+    """
+    P6修复：根据基金名称中的关键词推断板块。
+    返回板块名称，无法推断时返回"均衡"（默认）。
+    """
+    if not fund_name:
+        return "均衡"
+    name = fund_name.upper()
+    for sector, keywords in SECTOR_NAME_KEYWORDS.items():
+        for kw in keywords:
+            if kw.upper() in name:
+                return sector
+    return "均衡"
+
 
 def load_hold_codes():
     portfolio_path = PROJECT_ROOT / "portfolio.json"
@@ -146,7 +189,7 @@ def main():
     for _, row in top_n.iterrows():
         code = str(row["基金代码"]).zfill(6) if "基金代码" in row.index else str(row.iloc[1]).zfill(6)
         name = str(row["基金简称"]) if "基金简称" in row.index else str(row.iloc[2])
-        sector = SECTOR_MAP.get(code, "未知")
+        sector = SECTOR_MAP.get(code, infer_sector_by_name(name))
         score = float(row["综合得分"]) if "综合得分" in row.index else None
         top_list.append({
             "code": code,

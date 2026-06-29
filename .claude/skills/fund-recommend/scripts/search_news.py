@@ -207,12 +207,12 @@ def search_with_akshare(fund_code, sector):
         # stock_news_em 失败（AKShare API 变化），尝试 news_cctv
         print(f"[WARN] stock_news_em({fund_code}) 失败: {e}，尝试 news_cctv", file=sys.stderr)
 
-    # 2. 如果个股新闻不足，补充 news_cctv（新闻联播）— 只查最近3天加速
+    # 2. 如果个股新闻不足，补充 news_cctv（新闻联播）— 查最近7天
     if not bullish or not bearish:
         try:
             import datetime
             today = datetime.date.today()
-            for delta in range(0, 3):
+            for delta in range(0, 7):
                 d = today - datetime.timedelta(days=delta)
                 ds = d.strftime('%Y%m%d')
                 try:
