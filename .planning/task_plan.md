@@ -4,10 +4,10 @@
 
 | Phase | 描述 | 状态 | 依赖 |
 |-------|------|------|------|
-| Phase 1 | fund-recommend search_news.py 移除Tavily | ⏳ 待开始 | 无 |
-| Phase 2 | fund-weekly-report search_news.py 移除Tavily | ⏳ 待开始 | 无 |
-| Phase 3 | evals.json 追加 B6 断言 | ⏳ 待开始 | Phase 1-2 |
-| Phase 4 | 运行完整流水线验证 | ⏳ 待开始 | 全部 |
+| Phase 1 | fund-recommend search_news.py 移除Tavily | ✅ complete | 无 |
+| Phase 2 | fund-weekly-report search_news.py 移除Tavily | ✅ complete | 无 |
+| Phase 3 | evals.json 追加 B6 断言 | ✅ complete | Phase 1-2 |
+| Phase 4 | 运行完整流水线验证 | ✅ complete | 全部 |
 
 ---
 
