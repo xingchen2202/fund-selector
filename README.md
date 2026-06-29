@@ -14,19 +14,49 @@
 ## 项目结构
 
 ```
-├── .claude/skills/           ← 自定义 Skills
-│   ├── fund-weekly-report/   ← 基金周报生成
-│   ├── fund-screener/        ← 基金筛选
-│   ├── manager-profiler/     ← 经理画像
-│   ├── asset-allocation/     ← 资产配置
-│   └── execution-planner/    ← 交易执行
-├── cn-financial-mcp/         ← A 股个股/宏观数据（akshare）
-├── cn-mutual-fund/           ← 公募基金数据（akshare）
-├── registry/                 ← Skill 注册表
-├── portfolio.json            ← 持仓数据（私有，不上传）
-├── weekly_report.py         ← 独立运行脚本
-└── fund-reports/             ← 生成的报告（不上传）
+├── .claude/
+│   ├── skills/                    ← 自定义 Skills
+│   │   ├── _shared/               ← 共享知识库（规则、板块映射等）
+│   │   ├── fund-recommend/        ← 基金筛选推荐
+│   │   ├── fund-weekly-report/    ← 基金持仓周报
+│   │   ├── fund-screener/         ← 基金筛选器
+│   │   ├── manager-profiler/      ← 基金经理画像
+│   │   ├── asset-allocation/      ← 大类资产配置
+│   │   └── execution-planner/     ← 交易执行计划
+│   └── settings.local.json        ← 本地配置（不上传）
+├── cn-financial-mcp/              ← A 股个股/宏观数据（akshare）
+├── cn-mutual-fund/                ← 公募基金数据（akshare）
+├── FinanceAgent/                  ← 美股组合管理
+├── registry/                      ← Skill 注册表
+├── portfolio.json                 ← 持仓数据（私有，不上传）
+├── fund-reports/                  ← 生成的报告（不上传）
+└── README.md                      ← 本文件
 ```
+
+## Skills 说明
+
+### 共享知识库（`_shared/`）
+
+多个 Skill 共享的知识文件，避免重复维护：
+
+| 文件 | 用途 | 使用方 |
+|------|------|--------|
+| `rule-definitions.md` | 筛选规则 + 预警阈值 | fund-recommend, fund-weekly-report |
+| `sector-map.md` | 基金代码→板块映射 + 新闻关键词 | fund-recommend, fund-weekly-report |
+| `portfolio-schema.md` | 持仓 JSON 格式规范 | fund-weekly-report |
+| `macro-cycle-guide.md` | 经济周期判断逻辑 | fund-recommend |
+| `perilla-framework.md` | 持仓穿透分析标准 | fund-recommend |
+
+### 主要 Skills
+
+| Skill | 触发方式 | 功能 |
+|-------|---------|------|
+| `fund-recommend` | "推荐基金" / "买什么" | 4 步流程：宏观→配置→筛选→执行计划 |
+| `fund-weekly-report` | "生成报告" / "查看持仓" | 最新净值 + 盈亏 + 板块新闻 + 规则提示 |
+| `fund-screener` | "筛选基金" | 多维度基金筛选 |
+| `manager-profiler` | "XX经理怎么样" | 从业年限 + 管理产品 + 历史业绩 |
+| `asset-allocation` | "当前市场环境" | PE/PB 估值 + 景气度 + 建议比例 |
+| `execution-planner` | "怎么买" / "定投方案" | 分批建仓 + 网格策略 |
 
 ## 快速开始
 
@@ -50,26 +80,19 @@ pip install akshare pandas tavily-python
       "cost_nav": 1.4128,
       "cost_value": 8045.67
     }
-  ]
+  ],
+  "last_updated": "2026-06-28",
+  "data_source": "alipay-portfolio-snapshot"
 }
 ```
 
-### 3. 生成周报
+### 3. 使用方式
 
-```bash
-python weekly_report.py
-```
+在 Claude Code 中直接对话：
 
-或在 Claude Code 中输入 `/fund:report` 触发自动化 Skill。
-
-## 核心功能
-
-| 功能 | 触发方式 | 说明 |
-|------|---------|------|
-| 基金周报 | `/fund:report` 或 "生成报告" | 净值 + 盈亏 + 新闻 + 规则提示 |
-| 基金筛选 | "筛选基金" / "买什么" | 4 步流程：宏观→配置→筛选→执行 |
-| 经理画像 | "XX经理怎么样" | 从业年限 + 管理产品 + 历史业绩 |
-| 资产配置 | "当前市场环境" | PE/PB 估值 + 景气度 + 建议比例 |
+- **生成周报**：`/fund-weekly-report` 或说"生成报告"
+- **筛选基金**：`/fund-recommend` 或说"推荐基金"
+- **查看经理**：说"张坤怎么样"
 
 ## 投资铁律
 
