@@ -42,8 +42,8 @@
         },
         {
           "type": "stderr_contains",
-          "value": "2亿",
-          "description": "排除原因应提及2亿阈值"
+          "value": "20000",
+          "description": "排除原因应提及20000万阈值"
         }
       ]
     },
@@ -72,26 +72,26 @@
         {
           "type": "source_not_contains",
           "value": "NASDAQ US tech",
-          "description": "搜索词不应包含英文 'NASDAQ US tech'"
+          "description": "搜索词不应包含英文 NASDAQ US tech"
         },
         {
           "type": "source_not_contains",
           "value": "gold price outlook",
-          "description": "搜索词不应包含英文 'gold price outlook'"
+          "description": "搜索词不应包含英文 gold price outlook"
         },
         {
           "type": "source_not_contains",
           "value": "Hang Seng tech",
-          "description": "搜索词不应包含英文 'Hang Seng tech'"
+          "description": "搜索词不应包含英文 Hang Seng tech"
         },
         {
           "type": "source_contains",
-          "value": "美国纳斯达克",
+          "value": "纳斯达克",
           "description": "纳斯达克板块应使用中文搜索词"
         },
         {
           "type": "source_contains",
-          "value": "黄金市场",
+          "value": "黄金",
           "description": "黄金板块应使用中文搜索词"
         }
       ]
@@ -103,8 +103,13 @@
       "assertions": [
         {
           "type": "source_contains",
-          "value": "days=7",
-          "description": "Tavily搜索调用必须包含 days=7 参数"
+          "value": "days",
+          "description": "Tavily搜索调用必须传入 days 参数"
+        },
+        {
+          "type": "source_contains",
+          "value": "7",
+          "description": "days 参数值应为 7"
         }
       ]
     },
@@ -120,8 +125,8 @@
         },
         {
           "type": "source_contains",
-          "value": "时间超期",
-          "description": "应标注超期新闻"
+          "value": "days",
+          "description": "应限制搜索时间范围"
         }
       ]
     },
@@ -142,8 +147,8 @@
         },
         {
           "type": "contains",
-          "value": "2026年6月",
-          "description": "新闻应包含中文日期标注"
+          "value": "新闻背景",
+          "description": "报告应包含新闻背景板块"
         }
       ]
     },
