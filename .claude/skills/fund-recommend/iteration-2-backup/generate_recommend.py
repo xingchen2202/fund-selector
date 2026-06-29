@@ -22,9 +22,8 @@ def read_all_steps():
     merged = {}
     step_files = [
         REPORTS_DIR / "_pipeline_step0.json",
-        REPORTS_DIR / "_pipeline_step1.json",   # P5: Claude MCP 宏观数据
         REPORTS_DIR / "_pipeline_step2.json",
-        REPORTS_DIR / "_pipeline_step3.json",   # P5: Claude MCP 基金验证
+        REPORTS_DIR / "_pipeline_step3.json",
         REPORTS_DIR / "_pipeline_step4.json",
         REPORTS_DIR / "_pipeline_step5.json",
     ]
@@ -85,39 +84,24 @@ def generate_report(data: dict) -> str:
     lines.append(f"=== 基金筛选参考报告 {date_str} ===")
     lines.append("")
 
-    # 当前组合约束 — step0 数据在顶层
+    # 当前组合约束
+    constraints = data.get("constraints", {})
     lines.append("【当前组合约束】")
-    total_value = data.get("total_value", "N/A")
-    if total_value != "N/A" and total_value is not None:
-        lines.append(f"总市值：{total_value:,.2f} 元")
-    else:
-        lines.append("总市值：N/A 元")
-    var_budget = data.get("var_budget_remaining", data.get("var_budget", "N/A"))
-    lines.append(f"VaR 预算剩余：{var_budget} 元")
-    overloaded = data.get("overloaded_sectors", {})
+    lines.append(f"总市值：{constraints.get('total_value', 'N/A')} 元")
+    lines.append(f"VaR 预算剩余：{constraints.get('var_budget_remaining', constraints.get('var_budget', 'N/A'))} 元")
+    overloaded = constraints.get("overloaded_sectors", {})
     if overloaded:
         over_str = ", ".join(f"{k}（{v}%）" for k, v in overloaded.items())
         lines.append(f"已超配（本次不推荐新增）：{over_str}")
     lines.append("")
 
-    # 宏观环境 — P5修复：支持新 step1 格式（数据在顶层）
+    # 宏观环境
+    macro = data.get("macro", {})
     lines.append("【宏观环境】")
-    # 新格式：cycle_judgment 和 cycle_confidence 在顶层（来自 step1）
-    cycle_judgment = data.get("cycle_judgment")
-    cycle_confidence = data.get("cycle_confidence")
-    if cycle_judgment and cycle_confidence:
-        lines.append(f"周期判断：{cycle_judgment}（置信度：{cycle_confidence}）")
-    else:
-        # 兼容旧格式（嵌套在 macro 中）
-        macro = data.get("macro", {})
-        cycle = macro.get("cycle_judgment", {})
-        if isinstance(cycle, dict):
-            lines.append(f"周期判断：{cycle.get('phase', '未知')}（置信度：{cycle.get('confidence', 'N/A')}）")
-        else:
-            lines.append(f"周期判断：未知（置信度：N/A）")
-    # 可用/不可用指标
-    available = data.get("available_indicators", [])
-    unavailable = data.get("unavailable_indicators", [])
+    cycle = macro.get("cycle_judgment", {})
+    lines.append(f"周期判断：{cycle.get('phase', '未知')}（置信度：{cycle.get('confidence', 'N/A')}）")
+    available = macro.get("available_indicators", [])
+    unavailable = macro.get("unavailable_indicators", [])
     if available:
         lines.append(f"可用指标：{', '.join(available)}")
     if unavailable:
@@ -143,17 +127,9 @@ def generate_report(data: dict) -> str:
         name = c.get("name", "未知")
 
         # 从 validated_funds 获取详细数据
-        # P5修复：支持新格式（直接列表）和旧格式（嵌套在 verification 中）
         fund_detail = {}
-        if isinstance(validated_funds, list):
-            # 新格式：validated_funds 直接是列表
-            for f in validated_funds:
-                if f.get("code") == code:
-                    fund_detail = f
-                    break
-        elif isinstance(validated_funds, dict):
-            # 旧格式：嵌套在 verified/verification 中
-            verified_list = validated_funds.get("verified") or validated_funds.get("verified", [])
+        if isinstance(validated_funds, dict):
+            verified_list = validated_funds.get("verified", [])
             if isinstance(verified_list, list):
                 for f in verified_list:
                     if f.get("code") == code:
@@ -168,23 +144,13 @@ def generate_report(data: dict) -> str:
 
         lines.append(f"▌ {name}（{code}）")
         lines.append(f"[数据层]")
-        # P5修复：支持 scale + scale_unit 新格式
-        scale = fund_detail.get("scale")
-        scale_unit = fund_detail.get("scale_unit", "亿")
-        if scale is not None:
-            scale_str = f"{scale:.2f} {scale_unit}"
-        else:
-            # 兼容旧格式 scale_wan
-            scale_wan = fund_detail.get("scale_wan")
-            if scale_wan is not None:
-                scale_str = f"{scale_wan / 10000:.2f} 亿"
-            else:
-                scale_str = "N/A"
-        lines.append(f"  规模：{scale_str} 经理：{fund_detail.get('manager') or '待补充'} | 总费率：{fund_detail.get('fee_total') or fund_detail.get('fee') or '待补充'}")
+        scale = fund_detail.get("scale_wan")
+        scale_str = f"{scale / 10000:.2f} 亿" if scale else "N/A"
+        lines.append(f"  规模：{scale_str} 经理：{fund_detail.get('manager') or '待补充'} | 总费率：{fund_detail.get('fee') or '待补充'}")
 
-        # 收益标签 — P5修复：兼容 return_1y_label 和 return_label
+        # 收益标签
         return_1y = fund_detail.get("return_1y")
-        return_1y_label = fund_detail.get("return_1y_label") or fund_detail.get("return_label", "近1年")
+        return_1y_label = fund_detail.get("return_1y_label", "近1年")
         if return_1y is None:
             return_1y_str = "待补充"
         elif isinstance(return_1y, str):
@@ -201,11 +167,7 @@ def generate_report(data: dict) -> str:
         else:
             return_3y_str = f"{return_3y:+.2f}%"
 
-        # 最大回撤
-        max_dd = fund_detail.get("max_drawdown")
-        max_dd_str = f"{max_dd:+.2f}%" if max_dd is not None else "待补充"
-
-        lines.append(f"  {return_1y_label}：{return_1y_str} | {return_3y_label}：{return_3y_str} | 最大回撤：{max_dd_str}")
+        lines.append(f"  {return_1y_label}：{return_1y_str} | {return_3y_label}：{return_3y_str} | 最大回撤：{fund_detail.get('max_drawdown') or '待补充'}")
         lines.append(f"[分析层]")
         est_date = fund_detail.get("establishment_date")
         age_years = fund_detail.get("age_years")

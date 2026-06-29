@@ -200,38 +200,6 @@
           "description": "成立不满3年的基金应标注成立以来"
         }
       ]
-    },
-    {
-      "id": "B5-mcp-data-flow",
-      "description": "P5：推荐报告不得出现待补充占位符",
-      "prompt": "运行/fund:recommend，检查报告数据完整性",
-      "assertions": [
-        {
-          "type": "not_contains",
-          "value": "待补充",
-          "description": "报告中不应出现任何'待补充'占位符"
-        },
-        {
-          "type": "not_contains",
-          "value": "周期判断：未知",
-          "description": "宏观周期判断不应为未知"
-        },
-        {
-          "type": "not_contains",
-          "value": "总市值：N/A",
-          "description": "总市值不应为N/A"
-        },
-        {
-          "type": "contains",
-          "value": "近1年",
-          "description": "报告应包含近1年收益数据"
-        },
-        {
-          "type": "contains",
-          "value": "经理",
-          "description": "报告应包含基金经理信息"
-        }
-      ]
     }
   ]
 }

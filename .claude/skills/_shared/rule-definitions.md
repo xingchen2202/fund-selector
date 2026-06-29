@@ -68,3 +68,19 @@
 - **提示级别**: ℹ️ 信息
 - **提示内容**: "XX基金连续4周下跌，建议关注基本面变化"
 - **显示位置**: 报告顶部【规则提示】区
+
+---
+
+## 架构约束（必须遵守）
+
+### MCP工具调用规则
+- Claude负责：`get_fund_info`、`get_fund_nav_history`、`get_fund_manager_info`、`get_macro_pmi`、`get_macro_money_supply`、`get_valuation_metrics`、`get_north_bound_flow`等所有MCP工具调用
+- Python脚本负责：读取本地文件、数学计算、格式化输出
+- 严禁：在Python脚本中编写调用MCP工具的代码
+- 原因：Python subprocess环境无法访问MCP工具，强行编写只会产生"待补充"的空占位符
+
+### 数据流向
+```
+Claude调用MCP → 写入pipeline JSON → Python脚本读取JSON → 输出报告
+```
+禁止：Python脚本 → 调用MCP（永远不会成功）

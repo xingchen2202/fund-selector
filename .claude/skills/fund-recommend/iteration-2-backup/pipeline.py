@@ -20,12 +20,10 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent.parent
 REPORTS_DIR = PROJECT_ROOT / "fund-reports"
 
-# P5修复：语义化 step 文件命名
 STEP_FILES = {
     "step0": REPORTS_DIR / "_pipeline_step0.json",
-    "step1": REPORTS_DIR / "_pipeline_step1.json",      # Claude MCP 宏观数据
     "step2": REPORTS_DIR / "_pipeline_step2.json",
-    "step3": REPORTS_DIR / "_pipeline_step3.json",      # Claude MCP 基金验证
+    "step3": REPORTS_DIR / "_pipeline_step3.json",
     "step4": REPORTS_DIR / "_pipeline_step4.json",
     "step5": REPORTS_DIR / "_pipeline_step5.json",
 }
@@ -51,7 +49,7 @@ def read_step(step_key):
 def read_all_steps():
     """读取所有步骤文件并合并为一个 dict"""
     merged = {}
-    for key in ["step0", "step1", "step2", "step3", "step4", "step5"]:
+    for key in ["step0", "step2", "step3", "step4", "step5"]:
         data = read_step(key)
         if isinstance(data, dict):
             merged.update(data)

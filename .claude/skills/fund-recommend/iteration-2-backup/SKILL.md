@@ -60,50 +60,28 @@ python ${CLAUDE_SKILL_DIR}\scripts\load_portfolio.py
 
 ---
 
-## Step 1：宏观环境判断（Claude直接执行MCP调用）
+## Step 1：宏观环境判断
 
-> **[MUST] Claude直接调用以下MCP工具，不得委托Python脚本。**
+分别调用以下 MCP 工具（每个独立 try/catch）：
 
-### 1.1 调用 MCP 工具
+```
+cn-financial MCP:
+  - get_macro_pmi()        → PMI 趋势（标注成功/失败）
+  - get_macro_money_supply() → M2 增速（标注成功/失败）
+  - get_valuation_metrics(symbol="000300", num_periods=60) → 沪深300估值（标注成功/失败）
+  - get_north_bound_flow()  → 北向资金（标注成功/失败）
+```
 
-调用1：`get_macro_pmi()`
-  → 提取最新制造业PMI值和同比变化
-  → 失败时标注"PMI数据不可用"，继续
+然后运行：
 
-调用2：`get_macro_money_supply()`
-  → 提取M2同比增速
-  → 失败时标注"M2数据不可用"，继续
+```bash
+python ${CLAUDE_SKILL_DIR}\scripts\get_macro.py
+```
 
-调用3：`get_valuation_metrics(symbol="000300", num_periods=60)`
-  → 提取当前PE分位
-  → 失败时标注"估值数据不可用"，继续
-
-调用4：`get_north_bound_flow()`
-  → 提取近期净流入方向
-  → 返回异常数据（如2014年数据）时标注"北向资金接口异常"，继续
-
-### 1.2 判断经济周期
-
-基于上述数据，参考 macro-cycle-guide.md 判断经济周期阶段。
-
-### 1.3 写入 pipeline
-
-[MUST] 完成以上调用后，Claude将结果写入：
-  `fund-reports/_pipeline_step1.json`
-  格式：
-  ```json
-  {
-    "pmi": {"value": 50.0, "trend": "持平", "available": true},
-    "m2": {"value": 8.6, "available": true},
-    "valuation": {"pe_percentile": null, "available": false, "reason": "数据为空"},
-    "north_flow": {"direction": null, "available": false, "reason": "接口返回2014年数据"},
-    "cycle_judgment": "震荡期",
-    "cycle_confidence": "中",
-    "generated_at": "2026-06-29T15:00:00"
-  }
-  ```
-
-[MUST NOT] 不得在此步骤调用Python脚本获取宏观数据。
+**输出**:
+- 各指标实际数值（或标注"数据不可用"）
+- 经济周期判断结论（复苏/过热/衰退/震荡）+ 置信度（高/中/低）
+- 对应的推荐资产配置方向
 
 ---
 
@@ -132,58 +110,18 @@ python ${CLAUDE_SKILL_DIR}\scripts\screen_candidates.py
 
 ---
 
-## Step 3：候选基金验证（Claude直接执行MCP调用）
+## Step 3：候选基金验证
 
-> 读取 `_pipeline_step2.json` 获取候选基金列表。
-> **[MUST] Claude对每只候选基金直接调用以下MCP工具。**
+运行脚本验证候选基金的基本面：
 
-### 3.1 对每只候选基金调用 MCP
+```bash
+python ${CLAUDE_SKILL_DIR}\scripts\validate_funds.py
+```
 
-对每只候选基金 `fund_code`：
-
-  调用1：`get_fund_info(fund_code=fund_code)`
-    → 提取：规模、基金经理、成立日期、管理费、托管费
-    → 单只失败：标注"数据不可用"，不中止整体流程
-
-  调用2：`get_fund_nav_history(fund_code=fund_code, period="3y")`
-    → 提取：近1年收益、近3年收益、最大回撤
-    → 计算：Sharpe比率（如有足够数据）
-    → 成立不满3年：标注"成立以来（X年X月）"而非"近3年"
-
-  调用3：`get_fund_manager_info(fund_code=fund_code)`
-    → 提取：经理姓名、任职年限
-
-### 3.2 写入 pipeline
-
-[MUST] 完成以上调用后，Claude将所有基金的验证结果写入：
-  `fund-reports/_pipeline_step3.json`
-  格式：
-  ```json
-  {
-    "validated_funds": [
-      {
-        "code": "003593",
-        "name": "国泰景气行业灵活配置混合",
-        "scale": 4.42,
-        "scale_unit": "亿",
-        "manager": "陈异/王阳",
-        "manager_years": 3.5,
-        "fee_total": 1.5,
-        "return_1y": 5.55,
-        "return_label": "近1年",
-        "return_3y": -12.86,
-        "return_3y_label": "近3年",
-        "max_drawdown": -19.94,
-        "inception_date": "2017-03-20",
-        "data_available": true
-      }
-    ],
-    "excluded": [],
-    "generated_at": "2026-06-29T15:00:00"
-  }
-  ```
-
-[MUST NOT] 不得在此步骤调用Python脚本获取基金数据。
+对每只候选基金调用：
+- `get_fund_info(fund_code)` → 规模、经理、费率
+- `get_fund_nav_history(fund_code, period="3y")` → 计算最大回撤、Sharpe
+- `get_fund_portfolio(fund_code)` → 前十大持仓
 
 **失败处理**:
 - 单只基金失败：标注"数据获取失败"，跳过，继续处理下一只
@@ -244,46 +182,37 @@ python ${CLAUDE_SKILL_DIR}\scripts\perilla_analysis.py
 
 ---
 
-## Step 7：生成报告（P5修复：Claude MCP + Python 流水线混合模式）
+## Step 7：生成报告（P3修复：流水线模式）
 
-执行顺序：
+按顺序运行以下 4 个脚本，每个脚本读取/写入 `_pipeline_data.json` 数据总线：
 
-### 7.1 宏观数据（Claude MCP → step1）
-> 已在 Step 1 完成，跳过。
-
-### 7.2 候选池筛选（Python）
+### 7.1 验证候选基金 → 写入 pipeline["validated_funds"]
 ```bash
-python ${CLAUDE_SKILL_DIR}\scripts\screen_candidates.py
+python ${CLAUDE_SKILL_DIR}\scripts\validate_funds.py
 ```
-写入 `_pipeline_step2.json`
 
-### 7.3 基金验证（Claude MCP → step3）
-> 已在 Step 3 完成，跳过。
-
-### 7.4 VaR 影响计算（Python）
+### 7.2 计算 VaR 影响 → 写入 pipeline["var_impacts"]
 ```bash
 python ${CLAUDE_SKILL_DIR}\scripts\calc_var_impact.py
 ```
-读取 step0 + step2，写入 `_pipeline_step4.json`
 
-### 7.5 新闻搜索（Python）
+### 7.3 搜索新闻 → 写入 pipeline["news"]
 ```bash
 python ${CLAUDE_SKILL_DIR}\scripts\search_news.py
 ```
-读取 step2，写入 `_pipeline_step5.json`
 
-### 7.6 生成最终报告（Python）
+### 7.4 生成最终报告（从 pipeline 读取完整数据）
 ```bash
 python ${CLAUDE_SKILL_DIR}\scripts\generate_recommend.py --pipeline
 ```
-读取所有 step 文件，合并生成报告。
 
-**数据总线文件**:
-- `_pipeline_step1.json` — Claude 写入的宏观数据（Step 1）
-- `_pipeline_step2.json` — Python 写入的候选列表（Step 7.2）
-- `_pipeline_step3.json` — Claude 写入的基金验证数据（Step 3）
-- `_pipeline_step4.json` — Python 写入的 VaR 影响（Step 7.4）
-- `_pipeline_step5.json` — Python 写入的新闻数据（Step 7.5）
+**数据总线文件**: `fund-reports/_pipeline_data.json`
+- `load_portfolio.py` → 写入 `constraints`
+- `screen_candidates.py` → 写入 `candidates`
+- `validate_funds.py` → 写入 `validated_funds`
+- `calc_var_impact.py` → 写入 `var_impacts`
+- `search_news.py` → 写入 `news`
+- `generate_recommend.py --pipeline` → 读取以上所有字段
 
 **报告结构**（严格遵循）:
 
@@ -343,7 +272,6 @@ python ${CLAUDE_SKILL_DIR}\scripts\generate_recommend.py --pipeline
 | Tavily 不可用 | 标注跳过，继续生成报告 |
 | Excel 文件不存在 | 输出"候选池文件缺失"，停止 |
 | 某基金净值获取失败 | 跳过该基金，继续下一只 |
-| step1/step3 文件不存在 | Claude 必须先调用 MCP 写入 |
 
 ---
 
@@ -354,4 +282,3 @@ python ${CLAUDE_SKILL_DIR}\scripts\generate_recommend.py --pipeline
 - 利空新闻不能为空（防止确认偏误）
 - 持仓数据必须标注"滞后一季度"
 - 始终附带免责声明
-- **MCP 调用必须由 Claude 执行，不得放入 Python 脚本**

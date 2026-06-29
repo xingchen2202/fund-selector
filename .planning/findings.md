@@ -1,214 +1,114 @@
-# P1 研究发现
+# P5 研究发现 — MCP调用职责分离
 
 ## 根因分析
 
 ### 问题现象
-2026-06-29 的推荐报告中：
-- 024120 中邮核心主题混合C：规模 44.81万（0.004481亿），出现在推荐中
-- 002214 中海沪港深价值优选混合A：规模 3877.78万（0.387亿），出现在推荐中
-- 020362 中海沪港深价值优选混合C：规模 744.35万（0.074亿），出现在推荐中
 
-### 代码分析
+2026-06-29 的推荐报告（recommend_20260629.txt）中：
+- 总市值：N/A 元（应为 41,323.55）
+- 周期判断：未知（置信度：N/A）
+- 经理：待补充（应为具体姓名）
+- 总费率：待补充（应为 X.XX%）
+- 近1年：待补充（应为 +X.XX%）
+- 近3年：待补充（应为 +X.XX%）
+- 最大回撤：待补充（应为 -X.XX%）
 
-**screen_candidates.py 第68-69行**：
-```python
-if "规模（亿元）" in candidates.columns:
-    candidates = candidates[candidates["规模（亿元）"] >= 2]
+### 上上版数据正确的原因
+
+上上版（P3修复前）报告正确显示了数据：
+```
+近1年：+5.55% | 近3年：-12.86% | 最大回撤：-19.94%
 ```
 
-这段代码的意图是筛选规模 ≥ 2 亿的基金，但条件 `if "规模（亿元）" in candidates.columns` 检查 Excel 中是否存在"规模（亿元）"列。
+原因是 **Claude 直接调用 MCP 工具后手动整合到报告中**，没有经过 Python 脚本。
 
-### Excel 文件分析
+### P3 修复后引入的回归
 
-**文件**：`fund_screening_corrected_20260624.xlsx`  
-**Sheet**：`1-防守型(推荐定投)`  
-**列数**：21列  
-**实际列名**：
+P3 修复建立了 pipeline 架构，但错误地假设：
+1. `get_macro.py` 可以自己获取宏观数据 → 实际输出空模板
+2. `validate_funds.py` 可以自己获取基金数据 → 实际只获取 AKShare 数据，MCP 字段留空
+3. `calc_var_impact.py` 可以读取 constraints 中的 total_value → 实际 step0 的 total_value 未正确传递
 
-| 索引 | 列名 |
-|------|------|
-| 0 | 序号 |
-| 1 | 基金代码 |
-| 2 | 基金简称 |
-| 3 | 日期 |
-| 4 | 单位净值 |
-| 5 | 累计净值 |
-| 6 | 日涨跌幅 |
-| 7 | 近1周 |
-| 8 | 近1月 |
-| 9 | 近3月 |
-| 10 | 近6月 |
-| 11 | 近1年 |
-| 12 | 近2年 |
-| 13 | 近3年 |
-| 14 | 今年以来 |
-| 15 | 成立以来 |
-| 16 | 成立以来收益 |
-| 17 | 费率 |
-| 18 | 主题分类 |
-| 19 | 风险分类 |
-| 20 | 综合得分 |
-
-**结论**：Excel 不含任何规模相关字段，筛选条件永远为 False。
-
-### 调用链分析
+### 数据流断裂图
 
 ```
-SKILL.md Step 2
-  → python screen_candidates.py
-    → 读取 Excel（无规模列）
-    → if "规模（亿元）" in columns: → False → 跳过筛选
-    → 输出 top10（含小规模基金）
-  → Claude 调用 MCP get_fund_info()（仅获取基本信息，未检查规模）
-  → 生成报告（含不合格基金）
+当前断裂的数据流：
+
+load_portfolio.py → step0 ✅ {total_value: 41323.55, ...}
+screen_candidates.py → step2 ✅ {top10: [...]}
+get_macro.py → 输出空模板 ❌ → 无 step1 文件
+validate_funds.py → step3（AKShare数据 + None字段）❌ → MCP字段全为None
+calc_var_impact.py → step4 ✅（但读不到 total_value）
+search_news.py → step5 ✅（但 sector=未知）
+                    ↓
+generate_recommend.py → 合并所有 step
+                    ↓
+报告：total_value=N/A, 经理=待补充, 收益=待补充
 ```
 
-### 关键缺陷
+### 核心矛盾
 
-1. **screen_candidates.py**：依赖 Excel 中不存在的列做筛选
-2. **SKILL.md**：Step 2 和 Step 3 之间无规模验证步骤
-3. **validate_funds.py**：是模板脚本，实际由 Claude 手动调用 MCP，但未要求规模检查
-4. **rule-definitions.md**：虽然定义了"基金规模下限 2 亿"，但未说明如何获取规模数据
+| 能力 | Claude | Python 脚本 |
+|------|--------|-------------|
+| 调用 MCP 工具 | ✅ | ❌ |
+| 调用 AKShare | ✅（间接） | ✅ |
+| 文件读写 | ✅ | ✅ |
+| 数学计算 | ✅ | ✅ |
+| 报告格式化 | ✅ | ✅ |
 
-## 修复方案对比
+**矛盾**：pipeline 架构要求 Python 脚本串联执行，但 MCP 工具只能由 Claude 调用。
 
-| 方案 | 描述 | 优点 | 缺点 |
-|------|------|------|------|
-| A. Python 直接调用 AKShare | 在 screen_candidates.py 中直接 import akshare 获取规模 | 自动化，不依赖 Claude | AKShare 首次调用慢（10秒+）；脚本职责膨胀 |
-| B. SKILL.md 增加 Step 2.5 | 在 SKILL.md 中要求 Claude 调用 MCP 获取规模并过滤 | 职责清晰；利用已有 MCP 工具；尽早排除减少后续调用 | 依赖 Claude 执行 |
-| C. 修改 Excel 文件 | 在 Excel 中添加规模列 | 不需要额外 MCP 调用 | Excel 是历史快照，规模数据会过时 |
+### 修复方案：职责分离
 
-**推荐方案 B**：SKILL.md 增加 Step 2.5。
+```
+Claude 的职责：
+  1. 调用 MCP 工具获取数据
+  2. 将结果写入 pipeline JSON 文件
+  3. 触发 Python 脚本进行后续处理
 
-理由：
-1. MCP 工具（cn-mutual-fund）已提供 `get_fund_info()` 接口，返回"最新规模"字段
-2. 由 Claude 执行，职责清晰
-3. 尽早排除不合格候选，减少 Step 3 的 MCP 调用次数
-4. 不修改 Excel 文件（保持历史快照的纯粹性）
+Python 脚本的职责：
+  1. 读取 pipeline JSON 中的 MCP 数据
+  2. 执行本地计算（AKShare、数学、格式化）
+  3. 写入计算结果到 pipeline JSON
+```
+
+## 设计决策
+
+| 决策点 | 选项 A | 选项 B | 选择 |
+|--------|--------|--------|------|
+| step 文件命名 | 数字编号（step0-step5） | 语义化命名（step1_macro, step3_funds） | B（清晰表达数据来源）|
+| Claude 写入方式 | Claude 直接写 JSON | Python 脚本格式化后写 | A（减少脚本复杂度）|
+| AKShare 数据获取 | Python 脚本 | Claude 调用 MCP | B（Python 可直接 import）|
+| generate_recommend 适配 | 重写读取逻辑 | 保持兼容多格式 | A（统一命名后重写）|
+
+## 新文件结构
+
+```
+fund-reports/
+├── _pipeline_step0_constraints.json   ← load_portfolio.py
+├── _pipeline_step1_macro.json         ← Claude MCP 写入
+├── _pipeline_step2_candidates.json    ← screen_candidates.py
+├── _pipeline_step3_funds.json         ← Claude MCP 写入
+├── _pipeline_step3_akshare.json       ← validate_funds.py（AKShare补充）
+├── _pipeline_step4_var.json           ← calc_var_impact.py
+├── _pipeline_step5_news.json          ← search_news.py
+└── _pipeline_step6_report.txt         ← generate_recommend.py
+```
+
+**注意**：为保持向后兼容，pipeline.py 内部映射：
+- step0 → step0_constraints
+- step1 → step1_macro（Claude 写入）
+- step2 → step2_candidates
+- step3 → step3_funds（Claude 写入）
+- step3_akshare → step3_akshare（Python 写入）
+- step4 → step4_var
+- step5 → step5_news
 
 ## 相关文件路径
 
-- `.claude/skills/fund-recommend/scripts/screen_candidates.py` — 筛选脚本
-- `.claude/skills/fund-recommend/SKILL.md` — Skill 定义
-- `.claude/skills/fund-recommend/scripts/validate_funds.py` — 验证模板
-- `.claude/skills/_shared/rule-definitions.md` — 规则定义
-- `fund_screening_corrected_20260624.xlsx` — Excel 候选池
-
----
-
-# P3 研究发现
-
-## 根因分析
-
-### 问题现象
-2026-06-29 的推荐报告中：
-- 3 只推荐基金的新闻均未写入报告正文（显示"无"）
-- VaR 影响数值来自临时估算，非 `calc_var_impact.py` 的输出
-
-### 数据流断裂点
-
-```
-当前数据流（断裂）：
-
-load_portfolio.py ──stdout──→ Claude 读取 → 数据在对话上下文中
-screen_candidates.py ─stdout──→ Claude 读取 → 数据在对话上下文中
-validate_funds.py ──模板输出──→ Claude 调用 MCP → 数据未写入文件 ❌
-calc_var_impact.py ──未运行──→ Claude 手动估算 → 数据未写入文件 ❌
-search_news.py ──模板输出──→ Claude 调用 Tavily → 数据未写入文件 ❌
-                    ↓
-generate_recommend.py ← 读取一个 JSON（仅含约束+候选）
-                    ↓
-报告缺少 VaR + 新闻 → 显示"无"/"N/A"
-```
-
-### 关键缺陷
-
-1. **validate_funds.py**：模板脚本，实际数据由 Claude 手动获取，但从未写入文件
-2. **calc_var_impact.py**：从未被实际运行，Claude 在对话中手动估算
-3. **search_news.py**：模板脚本，Claude 通过 Tavily MCP 获取新闻，但未写入文件
-4. **generate_recommend.py**：只接受一个 JSON 参数，无法接收多脚本输出
-5. **SKILL.md Step 7**：只运行 `generate_recommend.py`，没有先运行验证/计算/搜索脚本
-
-### 修复方案
-
-引入 `_pipeline_data.json` 作为统一数据总线：
-
-```
-修复后数据流：
-
-screen_candidates.py → stdout JSON → Claude 读取并写入 pipeline["candidates"]
-validate_funds.py → 读取 pipeline → 调用 MCP → 写入 pipeline["funds"]
-calc_var_impact.py → 读取 pipeline → 计算 → 写入 pipeline["var"]
-search_news.py → 读取 pipeline → 调用 Tavily → 写入 pipeline["news"]
-                    ↓
-generate_recommend.py --pipeline → 读取完整 pipeline → 生成完整报告
-```
-
-### 设计决策
-
-| 决策点 | 选项 A | 选项 B | 选择 |
-|--------|--------|--------|------|
-| 数据传递方式 | 文件（_pipeline_data.json） | Claude 上下文传递 | A（可靠、可调试） |
-| 写入方式 | 每个脚本覆写整个文件 | 每个脚本只写自己字段 | B（解耦、可独立运行） |
-| generate_recommend 接口 | 只读 pipeline | 兼容旧单文件模式 | A+B（--pipeline 标志） |
-| 执行顺序 | SKILL.md 硬编码 | 脚本自己检测依赖 | A（简单可控） |
-
----
-
-# P4 研究发现
-
-## 根因分析
-
-### 问题现象
-2026-06-29 的推荐报告中：
-- 020362 中海沪港深价值优选混合C：成立日期 2024-01-12，报告标注"近3年：+51.71%"
-- 该 +51.71% 是成立以来收益（约2.5年），非真正的3年收益
-
-### MCP 数据分析
-
-调用 `get_fund_info("020362")` 返回：
-```json
-{
-  "成立时间": "2024-01-12",
-  "业绩表现": [
-    {"周期": "成立以来", "本产品区间收益": 51.71},
-    {"周期": "近1年", "本产品区间收益": 23.85}
-  ]
-}
-```
-
-**关键发现**：
-1. MCP 返回的数据中没有明确的"3年收益"字段
-2. "51.71%" 属于 `"周期": "成立以来"` 的收益
-3. 报告生成时 Claude 将"成立以来"收益误标为"近3年"
-
-### 代码分析
-
-**validate_funds.py** 当前不获取成立日期：
-```python
-# 当前代码
-result = {
-    "return_3y": None,  # 始终为 None，未填充
-    ...
-}
-```
-
-**generate_recommend.py** 直接使用 MCP 数据：
-```python
-# Claude 在 SKILL.md 流程中调用 get_fund_info() 获取"3年收益"
-# 但未检查基金成立时间，直接标注为"近3年"
-```
-
-### 修复方案
-
-1. **validate_funds.py**：从 AKShare 获取"成立日期"字段
-2. 计算成立年限，不满3年的标注为"成立以来（X年X月）"
-3. **generate_recommend.py**：区分字符串标签和数值
-
-### 设计决策
-
-| 决策点 | 选项 A | 选项 B | 选择 |
-|--------|--------|--------|------|
-| 数据来源 | AKShare 获取成立日期 | MCP get_fund_info 获取 | A（已在 AKShare 调用流程中） |
-| 不满3年标注 | 修改 return_3y 字段为字符串 | 新增 period_note 字段 | A+B（return_3y 存标签，period_note 存说明） |
-| 满3年基金 | return_3y 为 None，由 MCP 填充 | 直接由 AKShare 计算 | A（AKShare 净值历史 API 不稳定） |
+- `.claude/skills/fund-recommend/scripts/pipeline.py` — 步骤文件管理
+- `.claude/skills/fund-recommend/scripts/get_macro.py` — 宏观数据脚本（需降级）
+- `.claude/skills/fund-recommend/scripts/validate_funds.py` — 基金验证脚本（需降级）
+- `.claude/skills/fund-recommend/scripts/generate_recommend.py` — 报告生成（需适配）
+- `.claude/skills/fund-recommend/SKILL.md` — Skill 定义（需重构 Step1/3）
+- `.claude/skills/_shared/rule-definitions.md` — 规则定义（需新增约束）
