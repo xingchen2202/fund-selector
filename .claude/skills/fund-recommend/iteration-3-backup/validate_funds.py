@@ -140,11 +140,6 @@ def fetch_fund_basic(fund_code, candidate_name, candidate_sector, candidate_scor
         "establishment_date": None,
         "age_years": None,
         "age_months": None,
-        # P7修复：净值序列（供 calc_var_impact.py 计算真实波动率）
-        "nav_series": None,
-        # P7修复：回撤展示字段（含时间范围标注）
-        "drawdown_display": None,
-        "drawdown_inception": None,
     }
 
     # 获取 AKShare 基本信息
@@ -182,101 +177,6 @@ def fetch_fund_basic(fund_code, candidate_name, candidate_sector, candidate_scor
     return result
 
 
-# --------------- P7 修复：最大回撤过滤 --------------- #
-
-
-def determine_fund_type(fund_info):
-    """
-    从基金基本信息判断基金类型（股票型/混合型/债券型）。
-    用于选择对应的回撤阈值。
-
-    优先使用 MCP get_fund_info 返回的 fund_type 字段，
-    回退到名称关键词匹配。
-    """
-    # 优先使用 MCP 返回的基金类型字段
-    mcp_type = fund_info.get("fund_type") or fund_info.get("基金类型")
-    if mcp_type:
-        mcp_type = str(mcp_type)
-        if "债券" in mcp_type or "债" in mcp_type:
-            if "可转债" not in mcp_type and "可转换" not in mcp_type:
-                return "债券型"
-        if "股票" in mcp_type:
-            return "股票型"
-        if "混合" in mcp_type or "灵活配置" in mcp_type:
-            return "混合型"
-        if "指数" in mcp_type:
-            return "股票型"
-
-    # 回退：名称关键词匹配
-    name = (fund_info.get("name") or "").lower()
-    # 债券型判断
-    if any(w in name for w in ["债券", "纯债", "中短债", "短债"]):
-        if "可转债" not in name and "可转换" not in name:
-            return "债券型"
-    # 纯"债"字需要更严格（避免误匹配"可转债"等）
-    if name.endswith("债") and "可转债" not in name and "可转换" not in name:
-        return "债券型"
-    # 股票型判断
-    if any(w in name for w in ["股票", "股"]):
-        return "股票型"
-    # 指数/芯片/半导体 通常偏股票
-    if any(w in name for w in ["指数", "芯片", "半导体", "集成电路"]):
-        return "股票型"
-    # 默认混合型（灵活配置、混合、均衡等均归入）
-    return "混合型"
-
-
-def extract_drawdown(nav_history_data, fund_type="混合型"):
-    """
-    从净值历史数据中提取回撤信息。
-    区分近3年回撤（用于过滤）和成立以来回撤（仅展示）。
-    """
-    drawdown_3y = None
-    drawdown_inception = None
-    drawdown_label = "近3年"
-
-    try:
-        # 尝试从MCP返回数据中提取不同时间段的回撤
-        if isinstance(nav_history_data, dict):
-            drawdown_3y = nav_history_data.get("max_drawdown_3y") \
-                       or nav_history_data.get("drawdown_3y") \
-                       or nav_history_data.get("近3年最大回撤")
-            drawdown_inception = nav_history_data.get("max_drawdown") \
-                               or nav_history_data.get("成立以来最大回撤")
-    except Exception:
-        pass
-
-    # 如果3年数据不可用，使用成立以来数据并标注
-    if drawdown_3y is None and drawdown_inception is not None:
-        drawdown_3y = drawdown_inception
-        drawdown_label = "成立以来[注]"
-
-    return drawdown_3y, drawdown_inception, drawdown_label
-
-
-def should_exclude_by_drawdown(drawdown_value, drawdown_label, fund_type):
-    """
-    判断是否因回撤过大而排除基金。
-    数值为负数（如-0.75表示回撤75%）。
-    """
-    if drawdown_value is None:
-        return False, "回撤数据不可用，保留待人工核实"
-
-    # 阈值定义（绝对值）
-    thresholds = {
-        "近3年": {"股票型": 0.35, "混合型": 0.25, "债券型": 0.10},
-        "成立以来[注]": {"股票型": 0.60, "混合型": 0.50, "债券型": 0.20}
-    }
-
-    threshold_key = "近3年" if "近3年" in drawdown_label else "成立以来[注]"
-    threshold = thresholds[threshold_key].get(fund_type, 0.35)
-
-    actual = abs(float(drawdown_value))
-    if actual > threshold:
-        return True, f"回撤{actual:.1%}超过{fund_type}阈值{threshold:.0%}（{drawdown_label}）"
-    return False, ""
-
-
 def main():
     # 从 step2 读取 candidates
     candidates = read_candidates()
@@ -289,7 +189,6 @@ def main():
     print(f"[INFO] 开始验证 {len(candidates)} 只候选基金...", file=sys.stderr)
 
     validated = []
-    excluded_funds = []
     for c in candidates:
         code = c.get("code", "")
         name = c.get("name", "")
@@ -298,35 +197,15 @@ def main():
 
         print(f"[INFO] 验证 {code} {name}...", file=sys.stderr)
         detail = fetch_fund_basic(code, name, sector, score)
-
-        # P7修复：回撤过滤
-        fund_type = determine_fund_type(detail)
-        # nav_series 由 Claude 通过 MCP 在 step3 中写入
-        nav_data = detail.get("nav_series") or detail.get("max_drawdown")
-        drawdown_3y, drawdown_inception, label = extract_drawdown(nav_data, fund_type)
-
-        should_exclude, reason = should_exclude_by_drawdown(drawdown_3y, label, fund_type)
-        if should_exclude:
-            excluded_funds.append({"code": code, "name": name, "reason": reason})
-            print(f"[EXCLUDE] {code} {name} {reason}", file=sys.stderr)
-            continue
-
-        # 写入pipeline数据时明确标注时间范围
-        detail["drawdown_display"] = f"{drawdown_3y:.1%}（{label}）" if drawdown_3y is not None else "数据缺失"
-        detail["drawdown_inception"] = f"{drawdown_inception:.1%}（成立以来）" if drawdown_inception is not None else "数据缺失"
-        detail["fund_type"] = fund_type
-
         validated.append(detail)
 
         scale_str = f"{detail['scale_wan']}万" if detail['scale_wan'] else "未知"
         age_str = f"成立{detail['age_years']}年{detail['age_months']}月" if detail['age_years'] is not None else ""
-        dd_str = detail["drawdown_display"]
-        print(f"[OK] {code} 规模={scale_str} {age_str} 回撤={dd_str}", file=sys.stderr)
+        print(f"[OK] {code} 规模={scale_str} {age_str}", file=sys.stderr)
 
     result = {
         "candidates": [c.get("code") for c in candidates],
         "verified": validated,
-        "excluded": excluded_funds,
         "failed": [],
         "total": len(validated),
     }
@@ -334,7 +213,7 @@ def main():
     # 写入 step3
     write_validated_funds(result)
     print(json.dumps(result, ensure_ascii=False, indent=2))
-    print(f"\n[INFO] 已写入 pipeline['validated_funds'] ({len(validated)} 只基金, 排除{len(excluded_funds)}只)", file=sys.stderr)
+    print(f"\n[INFO] 已写入 pipeline['validated_funds'] ({len(validated)} 只基金)", file=sys.stderr)
 
 
 if __name__ == "__main__":

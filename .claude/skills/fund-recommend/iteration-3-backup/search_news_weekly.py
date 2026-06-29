@@ -45,52 +45,6 @@ SECTOR_REPRESENTATIVE_STOCKS = {
 
 CUTOFF_DAYS = 7
 
-# P9修复：模块级关键词列表（扩充）
-NEGATIVE_WORDS = [
-    # 基础利空
-    "下跌", "风险", "监管", "利空", "回调", "亏损",
-    "警示", "暴跌", "崩盘", "退市", "违规", "处罚",
-    # P9修复：补充常见利空词
-    "走弱", "收紧", "下滑", "承压", "下行压力",
-    "限制", "暂停", "罚款", "缩水", "撤资",
-    "抛售", "做空", "熊市", "重挫", "低迷",
-    "降温", "疲软", "萎缩", "回落", "阴跌",
-    "减持", "流出", "赎回", "暴雷", "调查",
-    "叫停", "整顿", "管控", "约束", "遏制",
-]
-POSITIVE_WORDS = [
-    "上涨", "利好", "政策支持", "创新高", "突破",
-    "增长", "复苏", "扩张", "布局", "机遇",
-    "反弹", "回暖", "走强", "攀升", "大涨",
-    "增持", "加仓", "流入", "申购", "扩容",
-]
-
-
-def classify_news(title, content):
-    """
-    正负面分类。矛盾时优先标为利空（保守原则）。
-    P9修复：只要含负面词，优先标为利空。
-    """
-    text = title + content
-    has_positive = any(w in text for w in POSITIVE_WORDS)
-    has_negative = any(w in text for w in NEGATIVE_WORDS)
-
-    if has_negative:  # 只要含负面词，优先标为利空
-        return "negative"
-    elif has_positive:
-        return "positive"
-    else:
-        return "neutral"
-
-
-def _has_real_news(result):
-    """检查是否有真实新闻（而非"无消息"占位符）"""
-    all_items = result.get("positive", []) + result.get("negative", [])
-    if not all_items:
-        return False
-    real = [x for x in all_items if "无明显" not in x and "暂无" not in x]
-    return len(real) > 0
-
 
 def fetch_eastmoney_news(sector):
     """获取东方财富财经新闻（使用板块代表性股票）"""
@@ -109,6 +63,15 @@ def filter_by_sector(df, sector):
     keywords = SECTOR_KEYWORDS.get(sector, [sector])
     cutoff = datetime.now() - timedelta(days=CUTOFF_DAYS)
     results = {"positive": [], "negative": []}
+
+    NEGATIVE_WORDS = [
+        "下跌", "风险", "监管", "利空", "回调", "亏损",
+        "警示", "暴跌", "崩盘", "退市", "违规", "处罚"
+    ]
+    POSITIVE_WORDS = [
+        "上涨", "利好", "政策支持", "创新高", "突破",
+        "增长", "复苏", "扩张", "布局", "机遇"
+    ]
 
     if df is None:
         return {"positive": ["新闻获取失败"], "negative": ["新闻获取失败"]}
@@ -148,19 +111,17 @@ def filter_by_sector(df, sector):
         if not any(kw in text for kw in keywords):
             continue
 
+        # 正负面分类
+        is_negative = any(w in text for w in NEGATIVE_WORDS)
+        is_positive = any(w in text for w in POSITIVE_WORDS)
+
         item_title = title[:60]
 
-        # P9修复：保守原则分类（使用模块级关键词列表）
-        sentiment = classify_news(title, content)
-
-        if sentiment == "negative" and len(results["negative"]) < 2:
+        if is_negative and len(results["negative"]) < 2:
             results["negative"].append(item_title)
-        elif sentiment == "positive" and len(results["positive"]) < 2:
+        elif is_positive and len(results["positive"]) < 2:
             results["positive"].append(item_title)
 
-        if len(results["positive"]) >= 2 and len(results["negative"]) < 2:
-            # 尝试再找一条利空（平衡）
-            pass
         if len(results["positive"]) >= 2 and len(results["negative"]) >= 2:
             break
 
@@ -172,47 +133,10 @@ def filter_by_sector(df, sector):
     return results
 
 
-def fetch_news_with_fallback(sector):
-    """
-    三级降级获取新闻：
-    Level 1: stock_news_em（东方财富个股新闻，覆盖面最广）
-    Level 2: stock_news_em("000001") 全市场新闻
-    Level 3: news_economic_baidu（百度财经经济新闻）
-    """
-    # Level 1
-    df = fetch_eastmoney_news(sector)
-    if df is not None and len(df) > 0:
-        print(f"[INFO] 新闻来源：东方财富（{sector}）", file=sys.stderr)
-        return df
-
-    # Level 2: 全市场代理
-    try:
-        import akshare as ak
-        df = ak.stock_news_em(symbol="000001")
-        if df is not None and len(df) > 0:
-            print(f"[INFO] 新闻来源：东方财富全市场（{sector}）", file=sys.stderr)
-            return df
-    except Exception as e:
-        print(f"[WARN] 全市场新闻失败({sector}): {e}", file=sys.stderr)
-
-    # Level 3: 百度财经
-    try:
-        import akshare as ak
-        df = ak.news_economic_baidu(category="股票")
-        if df is not None and len(df) > 0:
-            print(f"[INFO] 新闻来源：百度财经（{sector}）", file=sys.stderr)
-            return df
-    except Exception as e:
-        print(f"[WARN] 百度财经新闻失败({sector}): {e}", file=sys.stderr)
-
-    print(f"[WARN] 所有新闻接口不可用（{sector}）", file=sys.stderr)
-    return None
-
-
 def main(sectors):
     output = {}
     for sector in sectors:
-        df = fetch_news_with_fallback(sector)
+        df = fetch_eastmoney_news(sector)
         output[sector] = filter_by_sector(df, sector)
     print(json.dumps(output, ensure_ascii=False, indent=2))
 

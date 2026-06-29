@@ -94,57 +94,27 @@ def infer_sector_by_name(fund_name):
     return "均衡"
 
 
-# 模块级关键词列表（P9修复：扩充）
-NEGATIVE_WORDS = [
-    # 基础利空
-    "下跌", "风险", "监管", "利空", "回调", "亏损",
-    "警示", "暴跌", "崩盘", "退市", "违规", "处罚",
-    # P9修复：补充常见利空词
-    "走弱", "收紧", "下滑", "承压", "下行压力",
-    "限制", "暂停", "罚款", "缩水", "撤资",
-    "抛售", "做空", "熊市", "重挫", "低迷",
-    "降温", "疲软", "萎缩", "回落", "阴跌",
-    "减持", "流出", "赎回", "暴雷", "调查",
-    "叫停", "整顿", "管控", "约束", "遏制",
-]
-POSITIVE_WORDS = [
-    "上涨", "利好", "政策支持", "创新高", "突破",
-    "增长", "复苏", "扩张", "布局", "机遇",
-    "反弹", "回暖", "走强", "攀升", "大涨",
-    "增持", "加仓", "流入", "申购", "扩容",
-]
+def fetch_sector_news(sector):
+    """获取某板块的近7天新闻，返回 {positive: [str], negative: [str]}"""
+    try:
+        import akshare as ak
+        stock_code = SECTOR_REPRESENTATIVE_STOCKS.get(sector, "510300")
+        df = ak.stock_news_em(symbol=stock_code)
+    except Exception as e:
+        print(f"[WARN] 东方财富新闻获取失败({sector}): {e}", file=sys.stderr)
+        df = None
 
-
-def classify_news(title, content):
-    """
-    正负面分类。矛盾时优先标为利空（保守原则）。
-    P9修复：只要含负面词，优先标为利空。
-    """
-    text = title + content
-    has_positive = any(w in text for w in POSITIVE_WORDS)
-    has_negative = any(w in text for w in NEGATIVE_WORDS)
-
-    if has_negative:  # 只要含负面词，优先标为利空
-        return "negative"
-    elif has_positive:
-        return "positive"
-    else:
-        return "neutral"
-
-
-def _has_real_news(result):
-    """检查是否有真实新闻（而非"无消息"占位符）"""
-    all_items = result.get("positive", []) + result.get("negative", [])
-    if not all_items:
-        return False
-    real = [x for x in all_items if "无明显" not in x and "暂无" not in x]
-    return len(real) > 0
-
-
-def _classify_news(df, sector):
-    """对 DataFrame 中的新闻进行分类，返回 {positive: [str], negative: [str]}"""
     keywords = SECTOR_KEYWORDS.get(sector, [sector])
     cutoff = datetime.now() - timedelta(days=CUTOFF_DAYS)
+
+    NEGATIVE_WORDS = [
+        "下跌", "风险", "监管", "利空", "回调", "亏损",
+        "警示", "暴跌", "崩盘", "退市", "违规", "处罚",
+    ]
+    POSITIVE_WORDS = [
+        "上涨", "利好", "政策支持", "创新高", "突破",
+        "增长", "复苏", "扩张", "布局", "机遇",
+    ]
 
     results = {"positive": [], "negative": []}
 
@@ -193,12 +163,12 @@ def _classify_news(df, sector):
         date_str = pub_time[:10]
         item = f"{title[:50]}({date_str})" if date_str else title[:60]
 
-        # P9修复：保守原则分类
-        sentiment = classify_news(title, content)
+        is_negative = any(w in text for w in NEGATIVE_WORDS)
+        is_positive = any(w in text for w in POSITIVE_WORDS)
 
-        if sentiment == "negative" and len(results["negative"]) < 2:
+        if is_negative and len(results["negative"]) < 2:
             results["negative"].append(item)
-        elif sentiment == "positive" and len(results["positive"]) < 2:
+        elif is_positive and len(results["positive"]) < 2:
             results["positive"].append(item)
 
         if len(results["positive"]) >= 2 and len(results["negative"]) >= 2:
@@ -210,53 +180,6 @@ def _classify_news(df, sector):
         results["negative"] = [f"近{CUTOFF_DAYS}天无明显利空消息"]
 
     return results
-
-
-def fetch_sector_news(sector):
-    """获取某板块的近7天新闻，带三级降级，返回 {positive: [str], negative: [str]}"""
-    # Level 1: stock_news_em（东方财富个股新闻，覆盖面最广）
-    stock_code = SECTOR_REPRESENTATIVE_STOCKS.get(sector, "510300")
-    try:
-        import akshare as ak
-        df = ak.stock_news_em(symbol=stock_code)
-        if df is not None and len(df) > 0:
-            print(f"[INFO] 新闻来源：东方财富（{sector}，代表股{stock_code}）", file=sys.stderr)
-            result = _classify_news(df, sector)
-            if _has_real_news(result):
-                return result
-    except Exception as e:
-        print(f"[WARN] 东方财富新闻失败({sector}): {e}", file=sys.stderr)
-
-    # Level 2: 全市场新闻（用平安银行作为代理，覆盖更广）
-    try:
-        import akshare as ak
-        df = ak.stock_news_em(symbol="000001")
-        if df is not None and len(df) > 0:
-            print(f"[INFO] 新闻来源：东方财富（{sector}，全市场代理）", file=sys.stderr)
-            result = _classify_news(df, sector)
-            if _has_real_news(result):
-                return result
-    except Exception as e:
-        print(f"[WARN] 全市场新闻失败({sector}): {e}", file=sys.stderr)
-
-    # Level 3: 百度财经经济新闻
-    try:
-        import akshare as ak
-        df = ak.news_economic_baidu(category="股票")
-        if df is not None and len(df) > 0:
-            print(f"[INFO] 新闻来源：百度财经（{sector}）", file=sys.stderr)
-            result = _classify_news(df, sector)
-            if _has_real_news(result):
-                return result
-    except Exception as e:
-        print(f"[WARN] 百度财经新闻失败({sector}): {e}", file=sys.stderr)
-
-    # 全部失败
-    print(f"[WARN] 所有新闻接口不可用（{sector}）", file=sys.stderr)
-    return {
-        "positive": [f"近{CUTOFF_DAYS}天无明显利多消息"],
-        "negative": [f"近{CUTOFF_DAYS}天无明显利空消息"],
-    }
 
 
 def main():

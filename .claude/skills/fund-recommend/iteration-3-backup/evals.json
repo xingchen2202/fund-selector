@@ -259,62 +259,6 @@
           "description": "银行板块新闻应包含中文'银行'关键词"
         }
       ]
-    },
-    {
-      "id": "B7-drawdown-filter",
-      "description": "P7：最大回撤超标的基金不得出现在推荐报告",
-      "prompt": "运行/fund:recommend，检查候选基金最大回撤",
-      "assertions": [
-        {
-          "type": "not_contains",
-          "value": "-75.55%",
-          "description": "003593的-75.55%回撤不应出现在推荐报告"
-        },
-        {
-          "type": "not_contains",
-          "value": "-68.94%",
-          "description": "166001的-68.94%回撤不应出现在推荐报告"
-        },
-        {
-          "type": "contains",
-          "value": "最大回撤",
-          "description": "报告应包含最大回撤信息"
-        }
-      ]
-    },
-    {
-      "id": "B8-var-calculation",
-      "description": "P8：三只基金VaR不得完全相同",
-      "prompt": "运行/fund:recommend，检查VaR数值",
-      "assertions": [
-        {
-          "type": "not_contains",
-          "value": "45.82 元\n[新闻背景]\n  利多：近7天",
-          "description": "VaR不应是固定的45.82"
-        },
-        {
-          "type": "contains",
-          "value": "VaR",
-          "description": "报告应包含VaR计算结果"
-        }
-      ]
-    },
-    {
-      "id": "B9-news-classification",
-      "description": "P9：走弱/收紧等利空词不得被标为利多",
-      "prompt": "运行/fund:report，检查黄金板块新闻分类",
-      "assertions": [
-        {
-          "type": "not_contains",
-          "value": "利多: 贵金属板块大幅走弱",
-          "description": "走弱不应标为利多"
-        },
-        {
-          "type": "not_contains",
-          "value": "利多: 收紧",
-          "description": "收紧不应标为利多"
-        }
-      ]
     }
   ]
 }

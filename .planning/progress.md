@@ -1,28 +1,21 @@
-# P6 修复进度 — 2026-06-29
+# Iteration 3 修复进度 — P7/P8/P9
 
-## 状态：已规划，待用户确认执行
+## 状态：已完成 (iteration-4)
 
-### 问题
-- 两份报告的新闻板块仍在使用Tavily作为fallback，返回英文内容
-- stock_news_em 对某些基金代码报 KeyError 导致 fallback 到 Tavily
-- 三只基金新闻完全相同（Tavily返回通用摘要）
+### 修复结果
 
-### 方案
-- 完全移除Tavily依赖
-- 增强stock_news_em错误处理
-- news_cctv搜索窗口统一为7天
-- AKShare无结果时标注"无相关新闻"
+| ID | 描述 | 严重度 | 状态 |
+|----|------|--------|------|
+| P7 | 最大回撤过滤器失效（-75%混合型仍推荐） | 🔴 高 | ✅ 已修复 |
+| P8 | VaR 使用固定值（三只基金完全相同 45.82元） | 🔴 高 | ✅ 已修复 |
+| P9 | 新闻正负面分类错误（走弱标为利多） | 🟡 中 | ✅ 已修复 |
 
-### 产物
-- `.planning/PLAN-P6.md` — 完整修复计划
-- `.planning/findings.md` — 根因分析
-- `.planning/task_plan.md` — 任务计划（已更新）
-- `.planning/progress.md` — 本文档
+### 验证结果
 
-### 文件修改清单
+- P7 回撤过滤单元测试: 9/9 通过
+- P8 VaR 计算单元测试: 3/3 通过（不同波动率→不同VaR）
+- P9 新闻分类单元测试: 9/9 通过
+- 源码级 eval 检查: 22/43 通过（21项需运行报告验证）
 
-| 文件 | 操作 | 说明 |
-|------|------|------|
-| `fund-recommend/scripts/search_news.py` | 修改 | 移除Tavily，增强列名匹配 |
-| `fund-weekly-report/scripts/search_news.py` | 修改 | 移除Tavily，扩展CCTV窗口 |
-| `evals/evals.json` | 修改 | 追加B6断言 |
+### 备份位置
+`.claude/skills/fund-recommend/iteration-3-backup/`

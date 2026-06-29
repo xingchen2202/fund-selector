@@ -131,42 +131,6 @@ def generate_report(data: dict) -> str:
     var_impacts = data.get("var_impacts", {})
     news_data = data.get("news", {})
 
-    # P7修复：在限制数量前先按最大回撤过滤
-    # 导入 validate_funds.py 的过滤函数（如果可用）
-    try:
-        sys.path.insert(0, str(SCRIPT_DIR))
-        from validate_funds import determine_fund_type, extract_drawdown, should_exclude_by_drawdown
-        _drawdown_filter_available = True
-    except ImportError:
-        _drawdown_filter_available = False
-
-    if _drawdown_filter_available:
-        filtered_candidates = []
-        for c in candidates:
-            code = c.get("code", "")
-            name = c.get("name", "")
-            fund_detail = {}
-            for f in validated_funds:
-                if f.get("code") == code:
-                    fund_detail = f
-                    break
-
-            fund_type = determine_fund_type(fund_detail)
-            # 优先使用 drawdown_display（validate_funds.py 已计算），否则从原始数据提取
-            nav_data = fund_detail.get("nav_series") or fund_detail.get("max_drawdown")
-            drawdown_3y, drawdown_inception, label = extract_drawdown(nav_data, fund_type)
-
-            should_exclude, reason = should_exclude_by_drawdown(drawdown_3y, label, fund_type)
-            if should_exclude:
-                print(f"[EXCLUDE] {code} {name} {reason}", file=sys.stderr)
-                continue
-
-            # 标注回撤展示字段
-            c["_drawdown_display"] = f"{drawdown_3y:.1%}（{label}）" if drawdown_3y is not None else "数据缺失"
-            c["_drawdown_inception"] = f"{drawdown_inception:.1%}（成立以来）" if drawdown_inception is not None else "数据缺失"
-            filtered_candidates.append(c)
-        candidates = filtered_candidates
-
     # P6修复：去重 A/C/E 份额，限制3只
     candidates = deduplicate_share_classes(candidates)
     candidates = limit_candidates(candidates, max_count=3)
@@ -245,22 +209,9 @@ def generate_report(data: dict) -> str:
         else:
             return_3y_str = f"{return_3y:+.2f}%"
 
-        # 最大回撤 — P7修复：标注时间范围
+        # 最大回撤
         max_dd = fund_detail.get("max_drawdown")
-        drawdown_display = c.get("_drawdown_display")
-        drawdown_inception = c.get("_drawdown_inception")
-
-        if drawdown_display and drawdown_display != "数据缺失":
-            max_dd_str = drawdown_display
-        elif max_dd is not None:
-            max_dd_str = f"{max_dd:+.2f}%"
-        else:
-            max_dd_str = "数据缺失"
-        # 如果有成立以来回撤且与近3年不同，附加显示
-        if (drawdown_inception and drawdown_inception != "数据缺失"
-                and drawdown_display and drawdown_display != "数据缺失"
-                and drawdown_inception != drawdown_display):
-            max_dd_str = f"{max_dd_str} | 成立以来：{drawdown_inception}"
+        max_dd_str = f"{max_dd:+.2f}%" if max_dd is not None else "待补充"
 
         lines.append(f"  {return_1y_label}：{return_1y_str} | {return_3y_label}：{return_3y_str} | 最大回撤：{max_dd_str}")
         lines.append(f"[分析层]")
@@ -272,13 +223,8 @@ def generate_report(data: dict) -> str:
             base_info += f" | 成立于{est_date}（{age_years}年{age_months}月）"
         lines.append(base_info)
         lines.append(f"[VaR 影响]")
-        # P8修复：使用 calc_var_impact.py 计算的 var_display（含真实波动率）
-        var_display = var_info.get("var_display")
-        if var_display:
-            lines.append(f"  加入 5% 仓位预计增加 VaR：{var_display}")
-        else:
-            marginal_var = var_info.get("marginal_var", "N/A")
-            lines.append(f"  加入 5% 仓位预计增加 VaR：{marginal_var} 元")
+        marginal_var = var_info.get("marginal_var", "N/A")
+        lines.append(f"  加入 5% 仓位预计增加 VaR：{marginal_var} 元")
         lines.append(f"[新闻背景]")
         bullish = news_info.get("bullish", "无")
         bearish = news_info.get("bearish", "无")
