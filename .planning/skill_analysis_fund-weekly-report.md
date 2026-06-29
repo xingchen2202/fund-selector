@@ -5,6 +5,39 @@
 | 问题 | 状态 | 触发案例 | 修复方案 |
 |------|------|---------|---------|
 | P2 新闻返回英文 | ✅ 已修复 | 新闻板块出现英文开头"As of June 2026" | 搜索词中文化 + days=7 + 时间检查 |
+| P6 新闻源Tavily英文 | ✅ 已修复 | Tavily对中文财经覆盖不足，返回英文 | 完全移除Tavily，改用AKShare东方财富新闻 |
+
+---
+
+## P6 修复详情
+
+### 触发案例
+
+2026-06-29 周报中新闻板块全部为英文内容（Tavily来源），各板块新闻内容雷同。
+
+### 根因
+
+1. Tavily对中文财经内容覆盖不足，即使使用中文搜索词也主要返回英文来源
+2. AKShare `stock_news_em` 对部分基金代码报 KeyError 导致 fallback 到 Tavily
+3. `news_cctv` 搜索窗口仅3天，周末无数据时直接 fallback
+
+### 修复方案
+
+1. 完全移除 Tavily 依赖
+2. 每个板块使用代表性股票获取东方财富新闻
+3. `news_cctv` 搜索窗口扩展到7天
+4. `generate_report.py` 支持新新闻格式（dict of dicts）
+
+### 修改文件
+
+| 文件 | 变更 |
+|------|------|
+| `.claude/skills/fund-weekly-report/scripts/search_news.py` | 完全重写：AKShare东方财富，无Tavily |
+| `.claude/skills/fund-weekly-report/scripts/generate_report.py` | 支持新格式 + 新闻来源标注改为"东方财富" |
+
+### 验证结果
+
+全部8个板块新闻均为中文，来自东方财富（AKShare），无英文内容。
 
 ---
 
@@ -59,3 +92,4 @@
 |------|------|------|
 | iteration-1 | 2026-06-24 | 初始版本 |
 | iteration-2 | 2026-06-29 | P2 新闻中文化 + 7天过滤 |
+| iteration-3 | 2026-06-29 | P6 完全移除Tavily，改用AKShare东方财富 |
