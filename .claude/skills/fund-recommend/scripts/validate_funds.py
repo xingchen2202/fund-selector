@@ -23,22 +23,29 @@ if sys.platform == "win32":
 SCRIPT_DIR = Path(__file__).parent
 SKILL_DIR = SCRIPT_DIR.parent
 PROJECT_ROOT = SKILL_DIR.parent.parent.parent
-PIPELINE_FILE = PROJECT_ROOT / "fund-reports" / "_pipeline_data.json"
+REPORTS_DIR = PROJECT_ROOT / "fund-reports"
 
 
-def read_pipeline():
-    if PIPELINE_FILE.exists():
-        with open(PIPELINE_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {}
+def read_candidates():
+    """从 step2 文件读取候选列表"""
+    try:
+        script_dir = Path(__file__).parent
+        if str(script_dir) not in sys.path:
+            sys.path.insert(0, str(script_dir))
+        from pipeline import read_step
+        data = read_step("step2")
+        return data.get("top10", [])
+    except Exception:
+        return []
 
 
-def write_pipeline(key, data):
-    pipeline = read_pipeline()
-    pipeline[key] = data
-    PIPELINE_FILE.parent.mkdir(exist_ok=True)
-    with open(PIPELINE_FILE, "w", encoding="utf-8") as f:
-        json.dump(pipeline, f, ensure_ascii=False, indent=2)
+def write_validated_funds(data):
+    """写入 step3 文件"""
+    script_dir = Path(__file__).parent
+    if str(script_dir) not in sys.path:
+        sys.path.insert(0, str(script_dir))
+    from pipeline import write_step
+    write_step("step3", {"validated_funds": data})
 
 
 def get_fund_info_basic(fund_code):
@@ -171,8 +178,8 @@ def fetch_fund_basic(fund_code, candidate_name, candidate_sector, candidate_scor
 
 
 def main():
-    pipeline = read_pipeline()
-    candidates = pipeline.get("candidates", [])
+    # 从 step2 读取 candidates
+    candidates = read_candidates()
 
     if not candidates:
         print(json.dumps({"error": "pipeline 中无 candidates 字段"}))
@@ -203,8 +210,8 @@ def main():
         "total": len(validated),
     }
 
-    # 写入 pipeline
-    write_pipeline("validated_funds", result)
+    # 写入 step3
+    write_validated_funds(result)
     print(json.dumps(result, ensure_ascii=False, indent=2))
     print(f"\n[INFO] 已写入 pipeline['validated_funds'] ({len(validated)} 只基金)", file=sys.stderr)
 

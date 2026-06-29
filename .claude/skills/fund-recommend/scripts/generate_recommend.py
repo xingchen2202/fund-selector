@@ -1,34 +1,78 @@
 #!/usr/bin/env python3
 """
-generate_recommend.py — 整合所有数据，生成推荐报告
+generate_recommend.py — 合并所有步骤数据，生成推荐报告
 ━━━━━━━━━━━━━━━━━━━━
-支持两种模式：
-  1. --pipeline: 从 _pipeline_data.json 读取完整数据（默认）
-  2. <data_json_file>: 从指定 JSON 文件读取（向后兼容）
+从5个独立步骤文件读取数据，合并后：
+  1. 限制最终推荐不超过3只
+  2. 相同策略的A/C/E份额只保留评分最高的一只
+  3. 生成结构化报告并保存
 """
 import json
 import sys
-import io
 from datetime import datetime
 from pathlib import Path
-
-# Windows GBK 兼容性
-if sys.platform == "win32":
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
-    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
 SCRIPT_DIR = Path(__file__).parent
 SKILL_DIR = SCRIPT_DIR.parent
 REPORTS_DIR = SKILL_DIR.parent.parent.parent / "fund-reports"
-PIPELINE_FILE = REPORTS_DIR / "_pipeline_data.json"
 
 
-def read_pipeline():
-    """读取 pipeline 数据总线"""
-    if PIPELINE_FILE.exists():
-        with open(PIPELINE_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {}
+def read_all_steps():
+    """读取所有步骤文件并合并"""
+    merged = {}
+    step_files = [
+        REPORTS_DIR / "_pipeline_step0.json",
+        REPORTS_DIR / "_pipeline_step2.json",
+        REPORTS_DIR / "_pipeline_step3.json",
+        REPORTS_DIR / "_pipeline_step4.json",
+        REPORTS_DIR / "_pipeline_step5.json",
+    ]
+    for path in step_files:
+        if path.exists():
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                if isinstance(data, dict):
+                    merged.update(data)
+            except Exception:
+                pass
+    return merged
+
+
+def deduplicate_share_classes(candidates):
+    """
+    P6修复：相同策略的A/C/E份额只保留综合评分最高的一只。
+    识别方法：基金名称去除份额后缀（A/C/E）后相同则视为同一策略。
+    """
+    from collections import OrderedDict
+
+    groups = OrderedDict()
+    for c in candidates:
+        name = c.get("name", "")
+        # 去除份额后缀得到策略名
+        strategy = name.rstrip("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+        if strategy not in groups:
+            groups[strategy] = []
+        groups[strategy].append(c)
+
+    deduped = []
+    for strategy, funds in groups.items():
+        # 按评分降序，取最高分的一只
+        best = max(funds, key=lambda x: x.get("score") or 0)
+        deduped.append(best)
+
+    return deduped
+
+
+def limit_candidates(candidates, max_count=3):
+    """P6修复：限制最终推荐数量"""
+    # 按综合评分降序排列
+    sorted_candidates = sorted(
+        candidates,
+        key=lambda x: x.get("score") or 0,
+        reverse=True
+    )
+    return sorted_candidates[:max_count]
 
 
 def generate_report(data: dict) -> str:
@@ -44,7 +88,7 @@ def generate_report(data: dict) -> str:
     constraints = data.get("constraints", {})
     lines.append("【当前组合约束】")
     lines.append(f"总市值：{constraints.get('total_value', 'N/A')} 元")
-    lines.append(f"VaR 预算剩余：{constraints.get('var_budget', 'N/A')} 元")
+    lines.append(f"VaR 预算剩余：{constraints.get('var_budget_remaining', constraints.get('var_budget', 'N/A'))} 元")
     overloaded = constraints.get("overloaded_sectors", {})
     if overloaded:
         over_str = ", ".join(f"{k}（{v}%）" for k, v in overloaded.items())
@@ -65,10 +109,15 @@ def generate_report(data: dict) -> str:
     lines.append("")
 
     # 最终候选基金（合并 validated_funds + var_impacts + news）
-    candidates = data.get("candidates", [])
+    # step2 可能写入 "candidates" 或 "top10"
+    candidates = data.get("candidates") or data.get("top10") or []
     validated_funds = data.get("validated_funds", {})
     var_impacts = data.get("var_impacts", {})
     news_data = data.get("news", {})
+
+    # P6修复：去重 A/C/E 份额，限制3只
+    candidates = deduplicate_share_classes(candidates)
+    candidates = limit_candidates(candidates, max_count=3)
 
     lines.append(f"【最终候选基金】（{len(candidates)} 只）")
     lines.append("━" * 40)
@@ -80,15 +129,12 @@ def generate_report(data: dict) -> str:
         # 从 validated_funds 获取详细数据
         fund_detail = {}
         if isinstance(validated_funds, dict):
-            # 支持两种结构：{"verified": [{...}, ...]} 或 {code: {...}}
             verified_list = validated_funds.get("verified", [])
             if isinstance(verified_list, list):
                 for f in verified_list:
                     if f.get("code") == code:
                         fund_detail = f
                         break
-            elif isinstance(verified_list, dict):
-                fund_detail = verified_list.get(code, {})
 
         # 从 var_impacts 获取 VaR 数据
         var_info = var_impacts.get(code, {}) if isinstance(var_impacts, dict) else {}
@@ -102,7 +148,7 @@ def generate_report(data: dict) -> str:
         scale_str = f"{scale / 10000:.2f} 亿" if scale else "N/A"
         lines.append(f"  规模：{scale_str} 经理：{fund_detail.get('manager') or '待补充'} | 总费率：{fund_detail.get('fee') or '待补充'}")
 
-        # P4修复：收益标注使用正确的标签
+        # 收益标签
         return_1y = fund_detail.get("return_1y")
         return_1y_label = fund_detail.get("return_1y_label", "近1年")
         if return_1y is None:
@@ -122,12 +168,10 @@ def generate_report(data: dict) -> str:
             return_3y_str = f"{return_3y:+.2f}%"
 
         lines.append(f"  {return_1y_label}：{return_1y_str} | {return_3y_label}：{return_3y_str} | 最大回撤：{fund_detail.get('max_drawdown') or '待补充'}")
-
-        # P4修复：如果有成立日期，显示在分析层
+        lines.append(f"[分析层]")
         est_date = fund_detail.get("establishment_date")
         age_years = fund_detail.get("age_years")
         age_months = fund_detail.get("age_months")
-        lines.append(f"[分析层]")
         base_info = f"  板块：{c.get('sector', '未知')} | 综合评分：{c.get('score', 'N/A')}"
         if est_date and age_years is not None:
             base_info += f" | 成立于{est_date}（{age_years}年{age_months}月）"
@@ -157,7 +201,7 @@ def generate_report(data: dict) -> str:
     # 数据说明
     lines.append("【数据说明】")
     lines.append("- 基金数据来源：cn-mutual-fund MCP（AKShare）")
-    lines.append("- 新闻来源：Tavily（如可用）")
+    lines.append("- 新闻来源：AKShare（东方财富/新闻联播）+ Tavily（备用）")
     lines.append("- 持仓数据滞后：一个季度")
     lines.append("- 本报告不构成投资建议")
     lines.append("")
@@ -178,16 +222,13 @@ def main():
         data_file = Path(sys.argv[1])
 
     if use_pipeline:
-        # 从数据总线读取
-        if not PIPELINE_FILE.exists():
-            print(json.dumps({"error": f"pipeline 文件不存在: {PIPELINE_FILE}"}))
-            print("[提示] 请先运行 screen_candidates.py 和 validate_funds.py", file=sys.stderr)
+        # P6修复：从独立步骤文件读取并合并
+        data = read_all_steps()
+        if not data:
+            print(json.dumps({"error": "无步骤数据文件，请先运行流水线脚本"}))
             sys.exit(1)
-        with open(PIPELINE_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        print(f"[INFO] 从 pipeline 读取数据，keys: {list(data.keys())}", file=sys.stderr)
+        print(f"[INFO] 从步骤文件合并数据，keys: {list(data.keys())}", file=sys.stderr)
     elif data_file:
-        # 从指定文件读取（向后兼容）
         if not data_file.exists():
             print(json.dumps({"error": f"数据文件不存在: {data_file}"}))
             sys.exit(1)

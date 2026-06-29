@@ -20,22 +20,41 @@ if sys.platform == "win32":
 SCRIPT_DIR = Path(__file__).parent
 SKILL_DIR = SCRIPT_DIR.parent
 PROJECT_ROOT = SKILL_DIR.parent.parent.parent
-PIPELINE_FILE = PROJECT_ROOT / "fund-reports" / "_pipeline_data.json"
+REPORTS_DIR = PROJECT_ROOT / "fund-reports"
 
 
-def read_pipeline():
-    if PIPELINE_FILE.exists():
-        with open(PIPELINE_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {}
+def read_constraints():
+    """从 step0 文件读取约束"""
+    try:
+        script_dir = Path(__file__).parent
+        if str(script_dir) not in sys.path:
+            sys.path.insert(0, str(script_dir))
+        from pipeline import read_step
+        return read_step("step0")
+    except Exception:
+        return {}
 
 
-def write_pipeline(key, data):
-    pipeline = read_pipeline()
-    pipeline[key] = data
-    PIPELINE_FILE.parent.mkdir(exist_ok=True)
-    with open(PIPELINE_FILE, "w", encoding="utf-8") as f:
-        json.dump(pipeline, f, ensure_ascii=False, indent=2)
+def read_candidates():
+    """从 step2 文件读取候选列表"""
+    try:
+        script_dir = Path(__file__).parent
+        if str(script_dir) not in sys.path:
+            sys.path.insert(0, str(script_dir))
+        from pipeline import read_step
+        data = read_step("step2")
+        return data.get("top10", [])
+    except Exception:
+        return []
+
+
+def write_var_impacts(data):
+    """写入 step4 文件"""
+    script_dir = Path(__file__).parent
+    if str(script_dir) not in sys.path:
+        sys.path.insert(0, str(script_dir))
+    from pipeline import write_step
+    write_step("step4", {"var_impacts": data})
 
 
 def calc_marginal_var(
@@ -60,18 +79,16 @@ def calc_marginal_var(
 
 
 def main():
-    pipeline = read_pipeline()
+    pipeline = read_constraints()
 
     # 获取现有组合 VaR
-    constraints = pipeline.get("constraints", {})
-    existing_var = constraints.get("monthly_var_estimate", 1000)
-    existing_value = constraints.get("total_value", 50000)
+    existing_var = pipeline.get("monthly_var_estimate", 1000)
+    existing_value = pipeline.get("total_value", 50000)
 
     # 获取候选基金
-    candidates = pipeline.get("candidates", [])
+    candidates = read_candidates()
     if not candidates:
-        print(json.dumps({"error": "pipeline 中无 candidates 字段"}))
-        print("[提示] 请先运行 screen_candidates.py 生成候选列表", file=sys.stderr)
+        print(json.dumps({"error": "step2 中无 candidates，请先运行 screen_candidates.py"}))
         sys.exit(1)
 
     # 模拟加入 5% 仓位（按总市值的 5%）
@@ -92,8 +109,8 @@ def main():
         status = "⚠️ 超出预算" if result["exceeds_budget"] else "✅ 可接受"
         print(f"[VaR] {code} {name}: 边际VaR={result['marginal_var']}元 {status}", file=sys.stderr)
 
-    # 写入 pipeline
-    write_pipeline("var_impacts", var_results)
+    # 写入 step4
+    write_var_impacts(var_results)
     print(json.dumps(var_results, ensure_ascii=False, indent=2))
     print(f"\n[INFO] 已写入 pipeline['var_impacts'] ({len(var_results)} 只基金)", file=sys.stderr)
 

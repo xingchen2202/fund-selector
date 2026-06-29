@@ -74,19 +74,16 @@ def main():
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
-    # P3修复：写入 pipeline
+    # P6修复：写入独立步骤文件（避免竞争条件）
     try:
-        pipeline_path = PROJECT_ROOT / "fund-reports" / "_pipeline_data.json"
-        pipeline = {}
-        if pipeline_path.exists():
-            with open(pipeline_path, "r", encoding="utf-8") as f:
-                pipeline = json.load(f)
-        pipeline["constraints"] = result
-        with open(pipeline_path, "w", encoding="utf-8") as f:
-            json.dump(pipeline, f, ensure_ascii=False, indent=2)
-        print(f"[INFO] 已写入 pipeline['constraints']", file=sys.stderr)
+        script_dir = Path(__file__).parent
+        if str(script_dir) not in sys.path:
+            sys.path.insert(0, str(script_dir))
+        from pipeline import write_step
+        write_step("step0", result)
+        print(f"[INFO] 已写入 _pipeline_step0.json", file=sys.stderr)
     except Exception as e:
-        print(f"[WARN] 写入 pipeline 失败: {e}", file=sys.stderr)
+        print(f"[WARN] 写入 step0 失败: {e}", file=sys.stderr)
 
 
 if __name__ == "__main__":
