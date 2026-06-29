@@ -8,6 +8,42 @@
 | P2 新闻返回英文 | ✅ 已修复 | 新闻板块出现英文开头"As of June 2026" | 搜索词中文化 + days=7 |
 | P3 数据流断裂 | ✅ 已修复 | 报告中VaR和新闻显示"无" | 统一数据总线 pipeline.py |
 | P4 收益标签误导 | ✅ 已修复 | 020362（2年5月）标注"近3年：+51.71%" | 成立日期校验+动态标签 |
+| P5 MCP调用职责错误 | ✅ 已修复 | 2026-06-29报告中全部数据显示"待补充"，宏观周期"未知" | Claude直接执行MCP调用，Python仅格式化 |
+
+---
+
+## P5 修复详情
+
+### 触发案例
+
+2026-06-29 推荐报告（recommend_20260629.txt）中：
+- 总市值：N/A 元（应为 40,831.62）
+- 周期判断：未知（置信度：N/A）
+- 经理：待补充（应为具体姓名）
+- 总费率：待补充
+- 近1年/近3年/最大回撤：全部待补充
+
+### 根因
+
+P3 修复引入 pipeline 架构后，将 MCP 数据获取职责错误地分配给 Python 脚本：
+- `get_macro.py` 输出空模板（无法调用 get_macro_pmi 等 MCP 工具）
+- `validate_funds.py` 只获取 AKShare 数据，MCP 字段（经理/费率/收益）留 None
+- Python subprocess 无法访问 Claude 内置的 MCP 工具
+
+### 修复方案
+
+重构 SKILL.md 的 Step1 和 Step3 为 Claude 直接执行 MCP 调用：
+1. Claude 调用 MCP 工具（get_macro_pmi, get_fund_info 等）
+2. Claude 将结果写入 _pipeline_step1.json / _pipeline_step3.json
+3. Python 脚本读取已填好的 JSON 进行格式化/计算
+4. generate_recommend.py 合并所有 JSON 生成完整报告
+
+### 关键文件
+
+- `SKILL.md` — Step1/Step3 改为 Claude MCP 调用
+- `scripts/pipeline.py` — 扩展支持 step1/step3 文件
+- `scripts/generate_recommend.py` — 适配新数据格式
+- `_shared/rule-definitions.md` — 新增架构约束章节
 
 ---
 
