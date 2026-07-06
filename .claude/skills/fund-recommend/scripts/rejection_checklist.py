@@ -14,7 +14,9 @@
 """
 
 import argparse
+import json
 import sys
+from pathlib import Path
 
 # Windows GBK 兼容性
 if sys.platform == "win32":
@@ -69,10 +71,30 @@ RED_LINES = [
 ]
 
 
+def _write_rejection(output_path, rejected):
+    """将单只基金的否决结果追加写入 pipeline 步骤文件（供 generate_recommend 消费）。"""
+    if not output_path:
+        return False
+    path = Path(output_path)
+    try:
+        existing = []
+        if path.exists():
+            with open(path, "r", encoding="utf-8") as f:
+                d = json.load(f)
+            existing = list(d.get("rejected", []))
+        existing.append(rejected)
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump({"rejected": existing, "rejected_count": len(existing)},
+                      f, ensure_ascii=False, indent=2)
+        return True
+    except Exception:
+        return False
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="快否决清单 — A 股基金版（6 条一票否决红线）",
-        epilog="示例:\n  %(prog)s --code 003593 --drawdown -0.6191 --fcf-negative\n",
+        epilog="示例:\n  %(prog)s --code 003593 --drawdown -0.6191 --output _pipeline_rejection.json\n",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--code", required=True, help="基金代码")
@@ -89,6 +111,8 @@ def main():
                         help="R5: 靠下一个接盘者出更高价（博傻）")
     parser.add_argument("--cannot-afford-zero", action="store_true",
                         help="R6: 无法承受归零后果")
+    parser.add_argument("--output", default=None,
+                        help="写入否决结果到 pipeline 步骤文件（如 _pipeline_rejection.json）")
 
     args = parser.parse_args()
 
@@ -130,6 +154,9 @@ def main():
         print(f"  ⛔ 结论: 触发红线 [{ids}]，一票否决。该基金不得进入最终推荐。")
         print()
         print("  宁可错过，不可做错。")
+        rejected = {"code": args.code, "name": args.name, "triggered": triggered}
+        if _write_rejection(args.output, rejected):
+            print(f"  [INFO] 已写入否决结果到 pipeline")
         sys.exit(1)
     else:
         print("  ✅ 全部红线未触发，通过快否决检查。")

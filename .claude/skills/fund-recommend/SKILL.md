@@ -213,8 +213,11 @@ python ${CLAUDE_SKILL_DIR}\scripts\financial_rigor.py cross-validate --field 规
 
 ```bash
 python ${CLAUDE_SKILL_DIR}\scripts\rejection_checklist.py --code {code} --name {name} \
+    --output ${REPORTS_DIR}/_pipeline_rejection.json \
     [--business-unclear] [--fcf-negative] [--drawdown -0.61] [--erosion] [--relying-on-next-buyer] [--cannot-afford-zero]
 ```
+
+**关键**：必须传 `--output` 将否决结果写入 `_pipeline_rejection.json`，否则 Step 7 报告生成无法消费该结果，被否决的基金仍会出现在最终推荐中。
 
 **6 条一票否决红线（A 股基金版）**：
 - **R1** 无法说清底层赚钱方式 → 否决

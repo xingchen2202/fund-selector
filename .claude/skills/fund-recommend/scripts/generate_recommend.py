@@ -17,6 +17,18 @@ SKILL_DIR = SCRIPT_DIR.parent
 REPORTS_DIR = SKILL_DIR.parent.parent.parent / "fund-reports"
 
 
+def _load_rejection():
+    """加载快否决清单结果文件（如果存在）。"""
+    path = REPORTS_DIR / "_pipeline_rejection.json"
+    if not path.exists():
+        return None
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
 def read_all_steps():
     """读取所有步骤文件并合并"""
     merged = {}
@@ -130,6 +142,21 @@ def generate_report(data: dict) -> str:
     validated_funds = data.get("validated_funds", {})
     var_impacts = data.get("var_impacts", {})
     news_data = data.get("news", {})
+
+    # 【移植 ai-berkshire】消费快否决清单结果：被 R1-R6 否决的基金直接剔除
+    rejection_data = data.get("rejection") or _load_rejection()
+    rejected_codes = set()
+    rejected_details = []
+    if rejection_data:
+        for r in rejection_data.get("rejected", []):
+            rejected_codes.add(r.get("code"))
+            triggered = ",".join(r.get("triggered", []))
+            rejected_details.append(f"{r.get('code')} {r.get('name', '')} [R{triggered}]")
+    if rejected_codes:
+        before = len(candidates)
+        candidates = [c for c in candidates if c.get("code") not in rejected_codes]
+        print(f"[REJECTION] 快否决剔除 {before - len(candidates)} 只: {', '.join(rejected_details)}",
+              file=sys.stderr)
 
     # P7修复：在限制数量前先按最大回撤过滤
     # 导入 validate_funds.py 的过滤函数（如果可用）

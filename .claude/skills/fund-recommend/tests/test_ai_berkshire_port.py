@@ -61,9 +61,11 @@ def test_d5_utf8_wrapper_present():
 # ---------------------------------------------------------------------------
 # B. rejection_checklist 动态运行
 # ---------------------------------------------------------------------------
-def run_rejection(code, name, **flags):
+def run_rejection(code, name, output_file=None, **flags):
     cmd = [sys.executable, str(SCRIPTS / "rejection_checklist.py"),
            "--code", code, "--name", name]
+    if output_file:
+        cmd += ["--output", str(output_file)]
     for k, v in flags.items():
         if v is True:
             cmd.append(f"--{k}")
@@ -126,6 +128,48 @@ def test_decimal_no_float_drift():
     """Decimal 精度：0.1 + 0.2 应精确等于 0.3"""
     r = run_rigor("calc", "--expr", "0.1 + 0.2")
     assert "0.30" in r.stdout, "Decimal 精确计算失败"
+
+
+# ---------------------------------------------------------------------------
+# E. 端到端集成：rejection_checklist --output 写入 rejection 步骤文件
+# ---------------------------------------------------------------------------
+def _reset_rejection():
+    p = SCRIPTS.parent.parent / "fund-reports" / "_pipeline_rejection.json"
+    if p.exists():
+        p.unlink()
+    return p
+
+
+def test_e2e_rejection_persisted_to_pipeline():
+    """E2E: rejection --output 应把被否决心写入 _pipeline_rejection.json，供 generate_recommend 消费"""
+    rep_dir = SCRIPTS.parent.parent / "fund-reports"
+    rep_dir.mkdir(exist_ok=True)
+    rej_file = rep_dir / "_pipeline_rejection.json"
+    if rej_file.exists():
+        rej_file.unlink()
+
+    # 触发 R3，结果持久化到 pipeline
+    rc, _, _ = run_rejection("003593", "国泰景气", output_file=rej_file, drawdown=-0.6191)
+    assert rc == 1, f"R3 应否决 003593，退出码 {rc}"
+    assert rej_file.exists(), "否决结果未写入 pipeline 文件"
+
+    data = json.loads(rej_file.read_text(encoding="utf-8"))
+    codes = [r["code"] for r in data.get("rejected", [])]
+    assert "003593" in codes, "003593 未出现在 persisted rejected 列表"
+
+
+def test_e2e_benign_not_rejected():
+    """E2E: 未触发红线的基金不得写入 rejected"""
+    rep_dir = SCRIPTS.parent.parent / "fund-reports"
+    rej_file = rep_dir / "_pipeline_rejection.json"
+    if rej_file.exists():
+        rej_file.unlink()
+    rc, _, _ = run_rejection("005561", "红利低波", output_file=rej_file, drawdown=-0.1974)
+    assert rc == 0
+    if rej_file.exists():
+        data = json.loads(rej_file.read_text(encoding="utf-8"))
+        codes = [r["code"] for r in data.get("rejected", [])]
+        assert "005561" not in codes, "005561 不应被否决"
 
 
 def test_annualized():
