@@ -1,5 +1,7 @@
 # Fund Selector — A 股公募基金投研助手
 
+**中文** | [English](README_EN.md)
+
 > "一个人 + Claude Code = 一个投研团队。"
 
 **Fund Selector v2.0** 是一套基于三层架构哲学的 A 股公募基金投研 Skill 合集，将价值投资的对抗式多视角方法论与 AI Agent 结合，覆盖深度研究、财报分析、行业筛选、持仓管理、思维工具五大场景。
