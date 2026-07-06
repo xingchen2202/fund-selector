@@ -152,18 +152,21 @@ def main():
         print(json.dumps({"error": "step2 中无 candidates，请先运行 screen_candidates.py"}))
         sys.exit(1)
 
-    # 从 step3 获取净值序列
+    # 从 step3 获取净值序列 + 最大回撤
     verified_funds = step3.get("verified", [])
     if isinstance(verified_funds, dict):
         verified_funds = verified_funds.get("verified", [])
 
-    # 构建 code → nav_series 映射
-    nav_map = {}
+    # 构建 code → {nav_series, max_drawdown, fund_type} 映射
+    info_map = {}
     for f in verified_funds:
         code = f.get("code", "")
-        nav_series = f.get("nav_series")
-        if code and nav_series:
-            nav_map[code] = nav_series
+        if code:
+            info_map[code] = {
+                "nav_series": f.get("nav_series"),
+                "max_drawdown": f.get("max_drawdown"),
+                "fund_type": f.get("fund_type", ""),
+            }
 
     # 模拟加入 5% 仓位
     investment_per_fund = existing_value * 0.05
@@ -173,12 +176,32 @@ def main():
 
     var_results = {}
     excluded_by_var = []
+    excluded_by_drawdown = []
 
     for c in candidates:
         code = c.get("code", "")
         name = c.get("name", "")
 
-        nav_series = nav_map.get(code)
+        finfo = info_map.get(code, {})
+        nav_series = finfo.get("nav_series")
+        max_dd = finfo.get("max_drawdown")
+        fund_type = finfo.get("fund_type", "")
+
+        # D2修复：权益类基金最大回撤硬过滤（阈值 -35%）
+        # 仅对权益类（股票型/偏股混合/指数型）生效；债券/货币豁免
+        is_equity = any(k in fund_type for k in ("股票", "指数", "偏股", "混合", "LOF"))
+        DRAWDOWN_THRESHOLD = -0.35
+        if max_dd is not None and is_equity and max_dd < DRAWDOWN_THRESHOLD:
+            excluded_by_drawdown.append({
+                "code": code,
+                "name": name,
+                "max_drawdown": max_dd,
+                "reason": f"最大回撤{max_dd:.1%}突破{DRAWDOWN_THRESHOLD:.0%}权益阈值",
+            })
+            print(f"[EXCLUDE-DRAWDOWN] {code} {name}: 最大回撤{max_dd:.1%} < {DRAWDOWN_THRESHOLD:.0%}",
+                  file=sys.stderr)
+            continue
+
         var_amount, annual_vol, error = compute_var_from_nav(nav_series, investment_per_fund)
 
         if error:
@@ -221,12 +244,13 @@ def main():
     output = {
         "var_impacts": var_results,
         "excluded_by_var": excluded_by_var,
+        "excluded_by_drawdown": excluded_by_drawdown,
         "investment_per_fund": investment_per_fund,
         "var_budget": var_budget,
     }
     write_var_impacts(output)
     print(json.dumps(output, ensure_ascii=False, indent=2))
-    print(f"\n[INFO] 已写入 step4 ({len(var_results)} 只基金, 排除{len(excluded_by_var)}只)",
+    print(f"\n[INFO] 已写入 step4 ({len(var_results)} 只基金, VaR排除{len(excluded_by_var)}只, 回撤排除{len(excluded_by_drawdown)}只)",
           file=sys.stderr)
 
 

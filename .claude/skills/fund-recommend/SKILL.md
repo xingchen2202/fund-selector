@@ -10,13 +10,14 @@ when_to_use: >
   不触发：用户查看现有持仓（由fund-weekly-report处理）。
 disable-model-invocation: false
 user-invocable: true
-allowed-tools: Read Write Bash Python mcp__cn-financial mcp__cn-mutual-fund mcp__tavily
+allowed-tools: Read Write Bash Python mcp__cn-financial mcp__cn-mutual-fund mcp__tavily mcp__node_repl
 effort: high
 ---
 
 # 基金筛选推荐 Skill
 
 基于宏观数据 + 现有组合约束 + 新闻背景，筛选候选基金并分析组合影响。
+移植增强：集成 ai-berkshire (MIT) 的「快否决清单 + Decimal 精度工具」防偏差机制。
 
 ## 执行前准备 (MUST)
 
@@ -189,9 +190,47 @@ python ${CLAUDE_SKILL_DIR}\scripts\screen_candidates.py
 - 单只基金失败：标注"数据获取失败"，跳过，继续处理下一只
 - 全部失败：输出"所有候选基金数据获取失败，请检查网络"，停止
 
+### 3.3 数据精度校验（MUST，移植自 ai-berkshire financial_rigor.py）
+
+对每只候选基金的**关键数值**执行精度校验，确保 MCP 返回数据未漂移：
+
+```bash
+# 规模验算：份额 × 净值 vs 报告规模
+python ${CLAUDE_SKILL_DIR}\scripts\financial_rigor.py verify-scale --nav {nav} --shares {shares} --reported {reported_scale}
+
+# 多源交叉验证：MCP vs Excel 排名 vs 实时（至少两源）
+python ${CLAUDE_SKILL_DIR}\scripts\financial_rigor.py cross-validate --field 规模 --values '{"MCP": X, "Excel": Y}' --unit 亿
+```
+
+**校验标准**：偏差 > 5% 标记数据异常，> 1% 可接受但需注明"或因申购赎回波动"。
+**工具说明**：`financial_rigor.py` 使用 Python `decimal.Decimal` 而非 float，彻底避免浮点累积误差。
+
 ---
 
-## Step 4：VaR 影响计算
+## Step 3.5：快否决清单（移植自 ai-berkshire 8 条红线）
+
+对每只候选基金逐条检查，**触发任一条直接一票否决**，不得进入最终候选：
+
+```bash
+python ${CLAUDE_SKILL_DIR}\scripts\rejection_checklist.py --code {code} --name {name} \
+    [--business-unclear] [--fcf-negative] [--drawdown -0.61] [--erosion] [--relying-on-next-buyer] [--cannot-afford-zero]
+```
+
+**6 条一票否决红线（A 股基金版）**：
+- **R1** 无法说清底层赚钱方式 → 否决
+- **R2** 连续 3 年自由现金流为负且看不到改善 → 否决
+- **R3** 权益类最大回撤 < -35%（股票型/指数型/偏股混合/LOF） → 否决
+- **R4** 竞争优势被不可逆侵蚀 → 否决
+- **R5** 靠"下一个接盘者出更高价"赚钱（博傻） → 否决
+- **R6** 无法承受归零后果 → 否决
+
+**阈值参考**：R3 回撤阈值 -35% 对权益类生效，债券/货币基金豁免。
+
+**输出处理**：
+- 返回码 0 = 全部通过，继续 Step 4
+- 返回码 1 = 触发红线，记录触发的 [R?] 编号，**立即从候选池移除**，不得进入最终推荐
+
+---
 
 运行脚本计算加入新基金后的 VaR 变化：
 
@@ -303,10 +342,12 @@ python ${CLAUDE_SKILL_DIR}\scripts\generate_recommend.py --pipeline
 ━━━━━━━━━━━━━━━━━━━━
 ▌ 基金名称（代码）
 [数据层]
-  规模：XX 亿 | 经理：XXX | 总费率：X.XX%
+  规模：XX 亿（精度校验：偏差 X%） | 经理：XXX | 总费率：X.XX%
   近 1 年：+X.XX% | 近 3 年：+X.XX% | 最大回撤：-XX.XX%
 [分析层]
   基于数据的客观描述，不含主观推荐
+[快否决]（移植自 ai-berkshire 6 条红线）
+  ✅ 全部红线未触发 或 ⛔ 触发 [R?]：{原因} → 已移除
 [VaR 影响]
   加入 5% 仓位预计增加 VaR：XXX 元
 [新闻背景]
@@ -322,7 +363,7 @@ python ${CLAUDE_SKILL_DIR}\scripts\generate_recommend.py --pipeline
 
 【数据说明】
 - 基金数据来源：cn-mutual-fund MCP（AKShare）
-- 新闻来源：Tavily（如可用）
+- 新闻来源：AKShare（东方财富）
 - 持仓数据滞后：一个季度
 - 本报告不构成投资建议
 ```
@@ -344,6 +385,9 @@ python ${CLAUDE_SKILL_DIR}\scripts\generate_recommend.py --pipeline
 | Excel 文件不存在 | 输出"候选池文件缺失"，停止 |
 | 某基金净值获取失败 | 跳过该基金，继续下一只 |
 | step1/step3 文件不存在 | Claude 必须先调用 MCP 写入 |
+| 精度校验偏差 >5% | 标记"数据异常"，人工复核后方可纳入 |
+| 触发快否决红线 | 立即移除，记录 [R?] 编号，不进入推荐 |
+| 权益类回撤 < -35% | VaR 排除 + 记录到 excluded_by_drawdown |
 
 ---
 

@@ -9,6 +9,12 @@ import json
 import sys
 from pathlib import Path
 
+# Windows GBK 兼容性：强制 UTF-8 输出，避免 pipeline.read_step JSON 损坏（D5修复）
+if sys.platform == "win32":
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
+
 SCRIPT_DIR = Path(__file__).parent
 SKILL_DIR = SCRIPT_DIR.parent
 PROJECT_ROOT = SKILL_DIR.parent.parent.parent

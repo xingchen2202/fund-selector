@@ -222,7 +222,7 @@ def generate_report(data: dict) -> str:
         return_1y = fund_detail.get("return_1y")
         return_1y_label = fund_detail.get("return_1y_label") or fund_detail.get("return_label", "近1年")
         if return_1y is None:
-            return_1y_str = "待补充"
+            return_1y_str = "数据缺失"
         elif isinstance(return_1y, str):
             return_1y_str = return_1y
         else:
@@ -231,15 +231,22 @@ def generate_report(data: dict) -> str:
         return_3y = fund_detail.get("return_3y")
         return_3y_label = fund_detail.get("return_3y_label", "近3年")
         if return_3y is None:
-            # 成立不满3年：显示成立以来收益
+            # 成立不满3年：显示成立以来收益（P5修复：杜绝"待补充"占位符）
             since_val = fund_detail.get("return_since_inception")
             age_years = fund_detail.get("age_years")
             age_months = fund_detail.get("age_months")
             if since_val is not None and age_years is not None:
                 return_3y_label = f"成立以来（{age_years}年{age_months}月）"
                 return_3y_str = f"{since_val:+.2f}%"
+            elif age_years is not None:
+                # 年龄可算但成立以来总值缺失：回退到近1年+年龄说明，绝不显示字面占位符
+                fallback_1y = f"{return_1y:+.2f}%" if isinstance(return_1y, (int, float)) else (return_1y or "")
+                return_3y_label = f"近1年（成立{age_years}年{age_months}月，成立以来总值暂缺）"
+                return_3y_str = fallback_1y or "参见近1年"
             else:
-                return_3y_str = "待补充"
+                # 年龄也算不出：完全无数据
+                return_3y_label = "近1年"
+                return_3y_str = f"{return_1y:+.2f}%" if isinstance(return_1y, (int, float)) else (return_1y or "数据缺失")
         elif isinstance(return_3y, str):
             return_3y_str = return_3y
         else:
