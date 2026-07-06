@@ -202,7 +202,7 @@ def build_mirror_test(c: dict, fund_detail: dict) -> str:
     else:
         s3 = "当前最大回撤 [待填-回撤]，我能承受 [待填] 的下跌"
     if isinstance(return_1y, (int, float)):
-        s4 = f"近1年回报 {return_1y:+.1%}，预期持有 3 年以上"
+        s4 = f"近1年回报 {return_1y:+.1f}%，预期持有 3 年以上"
     else:
         s4 = "近1年回报 [待填]，预期持有 [待填] 年以上"
     s5 = f"即使归零，仓位占比不超过组合 5%，可承受"
@@ -326,6 +326,9 @@ def generate_report(data: dict) -> str:
                   file=sys.stderr)
 
     var_impacts = data.get("var_impacts", {})
+    # step4 可能因 calc_var_impact 写入包装而嵌套：{"var_impacts": {"var_impacts": {...}}}
+    if isinstance(var_impacts, dict) and "var_impacts" in var_impacts and isinstance(var_impacts.get("var_impacts"), dict):
+        var_impacts = var_impacts["var_impacts"]
     news_data = data.get("news", {})
 
     # 【移植 ai-berkshire】消费快否决清单结果：被 R1-R6 否决的基金直接剔除
@@ -453,7 +456,7 @@ def generate_report(data: dict) -> str:
             elif age_years is not None:
                 # 年龄可算但成立以来总值缺失：回退到近1年+年龄说明，绝不显示字面占位符
                 fallback_1y = f"{return_1y:+.2f}%" if isinstance(return_1y, (int, float)) else (return_1y or "")
-                return_3y_label = f"近1年（成立{age_years}年{age_months}月，成立以来总值暂缺）"
+                return_3y_label = f"成立以来（{age_years}年{age_months}月）"
                 return_3y_str = fallback_1y or "参见近1年"
             else:
                 # 年龄也算不出：完全无数据
