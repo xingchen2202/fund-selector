@@ -380,42 +380,106 @@ python .claude/skills/theme-perilla/scripts/industry_chain.py --theme AI算力
 
 ---
 
-## 参考借鉴
+## 灵感来源与演进
 
-本项目在设计与实现过程中，参考并借鉴了以下开源项目与方法论：
+> 本章记录本项目的设计灵感如何从外部项目的启发，演进为适合 A 股公募基金场景的原创实现。
 
-### 核心架构参考
+### 起点：两个项目的启发
 
-| 项目 | 借鉴内容 | 说明 |
-|------|---------|------|
-| [**ai-berkshire**](https://github.com/xbtlin/ai-berkshire) | 三层架构哲学 | Skill 层 / Agent 层 / Tool 层分层设计 |
-| **ai-berkshire** | 4 大师视角对抗分析 | 巴菲特/段永平/芒格/李录的独立分析视角 |
-| **ai-berkshire** | 信息丰富度分级（A/B/C）| 数据质量可信度评级机制 |
-| **ai-berkshire** | 快速否决清单 | 8 条红线一票否决机制 |
-| **ai-berkshire** | 三情景估值模型 | 乐观/中性/悲观估值方法 |
-| **ai-berkshire** | 供应链瓶颈猎手 | 产业链隐形冠军套利思路 |
-| [**Serenity股神**](https://www.bilibili.com/video/BV1fT7z6QE2S) | 紫苏叶理论 | 瓶颈节点投资法 + 五因子评分模型 |
+本项目的早期设计受益于以下两个项目的启发：
 
-### 工具与机制参考
+**1. [ai-berkshire](https://github.com/xbtlin/ai-berkshire)（MIT License）**
 
-| 借鉴来源 | 内容 | 本项目对应 |
-|---------|------|-----------|
-| **financial_rigor.py** (ai-berkshire) | Decimal 精确验算 | `tools/financial_rigor.py` |
-| **investment-checklist** (ai-berkshire) | 6 关买入清单 | `skills/fund-checklist.md` |
-| **quality-screen** (ai-berkshire) | 7 条硬规则筛选 | `skills/quality-screen.md` |
-| **report_audit.py** (ai-berkshire) | 报告抽样审计 | `tools/report_audit.py` |
-| **thesis-tracker** (ai-berkshire) | 买入后追踪 | `skills/thesis-tracker.md` |
-| **news-pulse** (ai-berkshire) | 快讯归因架构 | `skills/news-pulse.md` |
-| **Serenity股神** (Bilibili) | 紫苏叶五因子瓶颈评分 | `/theme-perilla` skill |
+这是一个面向个股价值投资的 AI Agent 框架。我们在其三层架构（Skill/Agent/Tool）的基础上，做了以下**方向性调整**：
 
-### 设计理念参考
+| ai-berkshire 原版 | 本项目的调整 |
+|------------------|-------------|
+| 面向全球个股（美股/港股/A 股个股）| 聚焦 **A 股公募基金**（股/债/货币/QDII 全覆盖）|
+| 4 大师视角 Agent 并行推理 | 改为 **进攻/防守双 Agent** + 快否决清单 |
+| 网页爬取数据（Yahoo/Morningstar/雪球）| 改用 **MCP 实时数据接口**（cn-financial/cn-mutual-fund）|
+| 19 个 skill 侧重个股研究 | 20 个 skill 侧重 **基金筛选 + 组合管理 + 定投执行** |
 
-- **对抗式多视角**：不依赖单一分析视角，通过独立 Agent 的冲突暴露盲点
-- **数据双源验证**：关键数据点强制交叉验证，偏差 >1% 自动报警
-- **先破后立**：先排除坏选择（快否决），再精选好标的
-- **买入后纪律**：不止于推荐，更包含追踪与卖出机制
+**关键差异**：ai-berkshire 是"选股框架"，本项目是"选基金框架"。我们保留了三层架构的灵魂，但替换了数据源和场景适配。
 
-> 感谢 [xbtlin/ai-berkshire](https://github.com/xbtlin/ai-berkshire) 与 [Serenity股神](https://www.bilibili.com/video/BV1fT7z6QE2S) 提供的方法论与工具设计灵感。
+**2. [Serenity股神](https://www.bilibili.com/video/BV1fT7z6QE2S) — 紫苏叶理论**
+
+这是一个关于"瓶颈节点投资"的方法论。我们将其核心思想**从个股研究移植到基金穿透分析**：
+
+| 紫苏叶理论原版 | 本项目的实现 |
+|--------------|-------------|
+| 寻找 AI 供应链中小市值瓶颈公司 | 穿透基金底层持仓，评估 **持仓股质量** |
+| 五因子评分筛选个股 | 五因子评分穿透基金 → **紫苏叶指数** |
+| 关注"金枪鱼大腹 vs 紫苏叶"的估值差异 | 关注 **基金底层是否持有被忽视的瓶颈企业** |
+
+### 工具层面的借鉴与改写
+
+本项目复用了部分开源工具的设计思路，但做了**场景适配和代码重写**：
+
+| 原始工具 | 本项目对应 | 改写说明 |
+|---------|-----------|---------|
+| `financial_rigor.py`（ai-berkshire）| `tools/financial_rigor.py` | 保留 Decimal 精度思想，**重写为基金场景**（规模/费率/VaR 计算）|
+| 否决清单机制 | 6 条红线 → 扩展为 **8 条铁律** | 增加费率穿透、预算硬平衡、再平衡机制等基金特有约束 |
+| 报告审计思路 | `tools/report_audit.py` | 保留 15% 抽样思想，**重写为基金报告格式** |
+
+### 我们的原创贡献
+
+本项目在借鉴基础上，加入了以下**原创设计**：
+
+**1. 信息丰富度分级（A/B/C）**
+
+借鉴 ai-berkshire 的数据质量思想，但扩展为基金专用：
+- A 级：规模 + 经理 + 净值三源齐全
+- B 级：缺 1 源
+- C 级：缺 2 源以上，标注"数据不足谨慎评估"
+
+**2. 快否决清单（8 条红线）**
+
+在 ai-berkshire 的 8 条红线基础上，增加基金特有约束：
+- 最大回撤突破阈值（权益类 -35%）
+- 规模 < 2 亿（流动性风险）
+- 费率过高警告线
+- 基金经理任职 < 1 年
+
+**3. 紫苏叶指数**
+
+原创指标，用于量化基金的"底层持仓瓶颈质量"：
+```
+紫苏叶指数 = 重仓股平均五因子得分 × 持仓集中度
+```
+
+**4. 双 Agent 对抗 + 冲突检测**
+
+简化 ai-berkshire 的 4 Agent 架构为双 Agent（进攻/防守），增加冲突检测机制：
+- 星级差 ≥ 2 → 标注"视角分歧大"
+- 排名差 ≥ 3 → 标注具体冲突
+
+### 演进路线图
+
+```
+Phase 1（已完成）: 基础架构
+  移植 ai-berkshire 三层架构 → 适配 A 股基金场景
+  
+Phase 2（已完成）: 防偏差工具
+  移植 financial_rigor.py 精度工具 → 重写为基金场景
+  
+Phase 3（已完成）: 快否决机制
+  借鉴 ai-berkshire 否决清单 → 扩展为 8 条基金铁律
+  
+Phase 4（已完成）: 紫苏叶穿透
+  借鉴 Serenity股神瓶颈理论 → 创建紫苏叶指数 + 穿透分析
+  
+Phase 5（进行中）: 自动化测试
+  60 个测试用例覆盖全链路
+```
+
+### 致谢
+
+> 感谢以下项目与创作者提供的灵感：
+> 
+> - [xbtlin/ai-berkshire](https://github.com/xbtlin/ai-berkshire) — 三层架构哲学、Decimal 精度工具、否决清单机制的设计灵感
+> - [Serenity股神](https://www.bilibili.com/video/BV1fT7z6QE2S) — 紫苏叶瓶颈节点投资方法论
+>
+> 本项目在其基础上针对 A 股公募基金场景做了深度适配与原创扩展，所有代码均为独立实现。
 
 ---
 
