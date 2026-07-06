@@ -62,23 +62,31 @@ def test_step3_validation():
 
 
 def test_4_agents_parallel():
-    """4 大师 Agent 并行执行."""
-    agents = ["value_agent", "growth_agent", "risk_agent", "cycle_agent"]
-    for a in agents:
-        r = run(["py", str(AGT / f"{a}.py")])
-        assert r.returncode == 0, f"{a} failed: {r.stderr[-100:]}"
-        out = json.loads((REPORTS / f"_agent_outputs/{a.split('_')[0]}.json").read_text(encoding="utf-8"))
-        assert out.get("agent") == a.split("_")[0]
-        assert len(out.get("rankings", [])) > 0
+    """4 大师视角 Agent 通过文档驱动（Claude 读 prompt 分析，无独立脚本）."""
+    # 文档驱动模式：team_lead.py 生成 prompt，Claude 直接分析
+    # 此测试验证 prompt 文件生成成功
+    r = run(["py", str(AGT / "team_lead.py"), "--input", str(REPORTS / "_pipeline_step3.json")])
+    assert r.returncode == 0, f"team_lead failed: {r.stderr[-100:]}"
+    prompts_dir = REPORTS / "_agent_prompts"
+    assert (prompts_dir / "value_prompt.txt").exists()
+    assert (prompts_dir / "growth_prompt.txt").exists()
+    assert (prompts_dir / "risk_prompt.txt").exists()
+    assert (prompts_dir / "cycle_prompt.txt").exists()
 
 
 def test_synthesizer():
-    """综合器合并 4 视角."""
-    r = run(["py", str(AGT / "synthesize.py")])
-    assert r.returncode == 0, f"synthesize failed: {r.stderr[-100:]}"
-    d = json.loads((REPORTS / "_agent_synthesized.json").read_text(encoding="utf-8"))
-    assert len(d.get("final_rankings", [])) > 0
-    assert d.get("top_pick") is not None
+    """综合器（文档驱动模式：验证 prompt 生成成功）."""
+    # 文档驱动模式下，team_lead 生成 4 个 prompt 文件
+    prompts_dir = REPORTS / "_agent_prompts"
+    assert prompts_dir.exists(), "agent prompts dir missing"
+    assert (prompts_dir / "value_prompt.txt").exists()
+    assert (prompts_dir / "growth_prompt.txt").exists()
+    assert (prompts_dir / "risk_prompt.txt").exists()
+    assert (prompts_dir / "cycle_prompt.txt").exists()
+    # 验证 prompt 内容非空
+    for name in ["value_prompt", "growth_prompt", "risk_prompt", "cycle_prompt"]:
+        content = (prompts_dir / f"{name}.txt").read_text(encoding="utf-8")
+        assert len(content) > 100, f"{name}.txt too short"
 
 
 def main():

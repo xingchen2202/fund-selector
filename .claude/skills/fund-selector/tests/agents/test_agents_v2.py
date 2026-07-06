@@ -24,20 +24,20 @@ def _import(name):
 def test_team_lead_generates_prompts():
     """Team Lead 应生成 4 个 prompt 文件"""
     sys.path.insert(0, str(AGT))
-    from team_lead import make_value_prompt, make_growth_prompt, make_risk_prompt, make_cycle_prompt
+    from team_lead import make_prompt
     funds = [{"code": "000001", "name": "测试基金", "scale": 5.0, "scale_unit": "亿",
               "manager": "张三", "manager_years": 5, "fee_total": 1.2,
               "return_1y": 15.0, "return_3y": 45.0, "max_drawdown": -0.20,
               "sector": "均衡", "nav_series": [1.0 + 0.01*i for i in range(60)]}]
     ctx = "测试组合"
-    p1 = make_value_prompt(funds, ctx)
-    p2 = make_growth_prompt(funds, ctx)
-    p3 = make_risk_prompt(funds, ctx)
-    p4 = make_cycle_prompt(funds, ctx)
-    assert "巴菲特" in p1 or "价值" in p1
-    assert "段永平" in p2 or "生意" in p2
-    assert "李录" in p3 or "风险" in p3
-    assert "芒格" in p4 or "格局" in p4
+    p1 = make_prompt("Buffett", "Value", "philosophy", "questions", funds, ctx)
+    p2 = make_prompt("Duan", "Growth", "philosophy", "questions", funds, ctx)
+    p3 = make_prompt("Li Lu", "Risk", "philosophy", "questions", funds, ctx)
+    p4 = make_prompt("Munger", "Cycle", "philosophy", "questions", funds, ctx)
+    assert "Buffett" in p1
+    assert "Duan" in p2
+    assert "Li Lu" in p3
+    assert "Munger" in p4
 
 
 def test_synthesizer_blend():

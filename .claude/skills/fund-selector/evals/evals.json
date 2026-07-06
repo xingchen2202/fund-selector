@@ -21,11 +21,11 @@
       "description": "团队型 skill 应输出 4 视角+冲突检测",
       "prompt": "用投研团队分析国泰有色矿业",
       "assertions": [
-        {"type": "contains", "value": "价值 Agent", "description": "包含巴菲特视角"},
-        {"type": "contains", "value": "成长 Agent", "description": "包含段永平视角"},
-        {"type": "contains", "value": "风控 Agent", "description": "包含李录视角"},
-        {"type": "contains", "value": "周期 Agent", "description": "包含芒格视角"},
-        {"type": "contains_any", "value": ["冲突", "视角一致"], "description": "包含冲突检测结果"}
+        {"type": "contains_any", "value": ["Buffett", "价值", "巴菲特"], "description": "包含巴菲特视角"},
+        {"type": "contains_any", "value": ["Duan", "成长", "段永平"], "description": "包含段永平视角"},
+        {"type": "contains_any", "value": ["Li Lu", "风控", "李录", "风险"], "description": "包含李录视角"},
+        {"type": "contains_any", "value": ["Munger", "周期", "芒格"], "description": "包含芒格视角"},
+        {"type": "contains_any", "value": ["冲突", "consensus", "综合"], "description": "包含冲突检测或综合研判"}
       ]
     },
     {

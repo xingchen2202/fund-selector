@@ -11,6 +11,11 @@
 import argparse
 import json
 import sys
+import io
+
+if sys.platform == "win32" and (not hasattr(sys.stdout, "encoding") or sys.stdout.encoding.lower() != "utf-8"):
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
 
 def validate_single(field: str, primary: float, secondary: float, tolerance: float = 0.01) -> dict:
