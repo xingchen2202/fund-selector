@@ -129,9 +129,9 @@ def build_chain(theme: str) -> dict:
     return {
         "theme": theme,
         "status": "found",
-        "upstream": [[s["companies"] for s in chain.get("upstream", [])]],
-        "midstream": [[s["companies"] for s in chain.get("midstream", [])]],
-        "downstream": [[s["companies"] for s in chain.get("downstream", [])]],
+        "upstream": [s["companies"] for s in chain.get("upstream", [])],
+        "midstream": [s["companies"] for s in chain.get("midstream", [])],
+        "downstream": [s["companies"] for s in chain.get("downstream", [])],
         "total_companies": len(unique_codes),
     }
 
