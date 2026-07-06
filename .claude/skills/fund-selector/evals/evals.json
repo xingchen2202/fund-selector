@@ -1,0 +1,207 @@
+{
+  "skill": "fund-selector",
+  "version": "v2.0",
+  "description": "19 个 skill 的 eval 断言，验证路由、触发词、输出段落",
+  "evals": [
+    {
+      "id": "E01-fund-deep-research",
+      "skill": "/fund-deep-research",
+      "description": "深度研究 skill 应输出穿透分析+六关评分+镜子测试",
+      "prompt": "深度研究中欧新趋势混合",
+      "assertions": [
+        {"type": "contains", "value": "数据可信度", "description": "包含信息丰富度评级"},
+        {"type": "contains", "value": "六关评分", "description": "包含六关评分段落"},
+        {"type": "contains", "value": "镜子测试", "description": "包含镜子测试段落"},
+        {"type": "contains", "value": "最大回撤", "description": "包含回撤数据"},
+        {"type": "not_contains", "value": "新闻：无", "description": "不应出现字面占位符"}
+      ]
+    },
+    {
+      "id": "E02-fund-team",
+      "skill": "/fund-team",
+      "description": "团队型 skill 应输出 4 视角+冲突检测",
+      "prompt": "用投研团队分析国泰有色矿业",
+      "assertions": [
+        {"type": "contains", "value": "价值 Agent", "description": "包含巴菲特视角"},
+        {"type": "contains", "value": "成长 Agent", "description": "包含段永平视角"},
+        {"type": "contains", "value": "风控 Agent", "description": "包含李录视角"},
+        {"type": "contains", "value": "周期 Agent", "description": "包含芒格视角"},
+        {"type": "contains_any", "value": ["冲突", "视角一致"], "description": "包含冲突检测结果"}
+      ]
+    },
+    {
+      "id": "E03-manager-deep-dive",
+      "skill": "/manager-deep-dive",
+      "description": "经理画像应输出履历+业绩+风格",
+      "prompt": "周蔚文经理怎么样",
+      "assertions": [
+        {"type": "contains", "value": "任职", "description": "包含任职年限"},
+        {"type": "contains", "value": "管理", "description": "包含管理产品"},
+        {"type": "contains_any", "value": ["年化", "收益率"], "description": "包含业绩指标"}
+      ]
+    },
+    {
+      "id": "E04-private-fund-research",
+      "skill": "/private-fund-research",
+      "description": "私募研究应标注数据置信度",
+      "prompt": "研究某私募基金",
+      "assertions": [
+        {"type": "contains_any", "value": ["置信度", "信息丰富度"], "description": "包含数据可信度标注"},
+        {"type": "contains_any", "value": ["A 级", "B 级", "C 级"], "description": "包含信息丰富度分级"}
+      ]
+    },
+    {
+      "id": "E05-fund-series",
+      "skill": "/fund-series",
+      "description": "系列研报应输出多篇结构",
+      "prompt": "做一个电池行业系列研报",
+      "assertions": [
+        {"type": "contains", "value": "篇", "description": "包含多篇规划"},
+        {"type": "contains_any", "value": ["产业链", "行业"], "description": "包含行业分析要素"}
+      ]
+    },
+    {
+      "id": "E06-fund-earnings-review",
+      "skill": "/fund-earnings-review",
+      "description": "财报解读应输出关键指标+变动",
+      "prompt": "解读中欧新趋势最新季报",
+      "assertions": [
+        {"type": "contains_any", "value": ["规模", "份额"], "description": "包含规模变动"},
+        {"type": "contains_any", "value": ["持仓", "重仓"], "description": "包含持仓分析"},
+        {"type": "contains", "value": "变动", "description": "包含变动分析"}
+      ]
+    },
+    {
+      "id": "E07-fund-earnings-team",
+      "skill": "/fund-earnings-team",
+      "description": "财报团队应多视角解读",
+      "prompt": "四大师解读某基金年报",
+      "assertions": [
+        {"type": "contains_any", "value": ["巴菲特", "价值"], "description": "包含巴菲特视角"},
+        {"type": "contains_any", "value": ["芒格", "竞争"], "description": "包含芒格视角"},
+        {"type": "contains", "value": "综合", "description": "包含综合研判"}
+      ]
+    },
+    {
+      "id": "E08-industry-research",
+      "skill": "/industry-research",
+      "description": "行业研究应输出产业链图谱",
+      "prompt": "研究电池行业产业链",
+      "assertions": [
+        {"type": "contains_any", "value": ["产业链", "上游", "中游", "下游"], "description": "包含产业链环节"},
+        {"type": "contains_any", "value": ["景气度", "竞争格局"], "description": "包含景气度判断"}
+      ]
+    },
+    {
+      "id": "E09-industry-funnel",
+      "skill": "/industry-funnel",
+      "description": "漏斗筛选应有否决轨迹",
+      "prompt": "全市场筛选电池基金",
+      "assertions": [
+        {"type": "contains_any", "value": ["排除", "否决", "未通过"], "description": "包含否决说明"},
+        {"type": "contains", "value": "精选", "description": "包含精选结果"}
+      ]
+    },
+    {
+      "id": "E10-quality-screen",
+      "skill": "/quality-screen",
+      "description": "质量筛选应输出通过/排除列表",
+      "prompt": "对沪深300成分股做质量筛选",
+      "assertions": [
+        {"type": "contains_any", "value": ["通过", "排除"], "description": "包含筛选结果"},
+        {"type": "contains_any", "value": ["ROE", "负债率", "现金流"], "description": "包含财务指标"}
+      ]
+    },
+    {
+      "id": "E11-bottleneck-hunter",
+      "skill": "/bottleneck-hunter",
+      "description": "瓶颈猎手应识别隐形冠军",
+      "prompt": "AI基础设施供应链瓶颈在哪里",
+      "assertions": [
+        {"type": "contains_any", "value": ["瓶颈", "约束"], "description": "包含瓶颈识别"},
+        {"type": "contains_any", "value": ["隐形冠军", "细分龙头"], "description": "包含隐形冠军"}
+      ]
+    },
+    {
+      "id": "E12-fund-checklist",
+      "skill": "/fund-checklist",
+      "description": "检查清单应输出逐关结果",
+      "prompt": "中欧新趋势混合买入前检查清单",
+      "assertions": [
+        {"type": "contains", "value": "✅", "description": "包含检查通过标记"},
+        {"type": "contains_any", "value": ["护城河", "安全边际", "管理层"], "description": "包含检查维度"}
+      ]
+    },
+    {
+      "id": "E13-portfolio-review",
+      "skill": "/portfolio-review",
+      "description": "组合分析应输出仓位+相关性",
+      "prompt": "分析我的持仓组合",
+      "assertions": [
+        {"type": "contains_any", "value": ["仓位", "占比", "配置"], "description": "包含仓位分析"},
+        {"type": "contains_any", "value": ["相关性", "集中度"], "description": "包含风险分析"}
+      ]
+    },
+    {
+      "id": "E14-thesis-tracker",
+      "skill": "/thesis-tracker",
+      "description": "追踪应输出季度状态",
+      "prompt": "001198 买入后追踪",
+      "assertions": [
+        {"type": "contains_any", "value": ["绿", "黄", "红"], "description": "包含状态评级"},
+        {"type": "contains_any", "value": ["触发", "预警"], "description": "包含触发条件"}
+      ]
+    },
+    {
+      "id": "E15-thesis-drift",
+      "skill": "/thesis-drift",
+      "description": "漂移检测应区分事实/价格/措辞",
+      "prompt": "对比001198两份报告的逻辑漂移",
+      "assertions": [
+        {"type": "contains_any", "value": ["事实变化", "价格变化", "措辞变化"], "description": "包含漂移类型区分"},
+        {"type": "contains_any", "value": ["持有", "加仓", "减仓"], "description": "包含操作建议"}
+      ]
+    },
+    {
+      "id": "E16-news-pulse",
+      "skill": "/news-pulse",
+      "description": "快讯应输出多源归因",
+      "prompt": "018167 今天为什么涨",
+      "assertions": [
+        {"type": "contains_any", "value": ["公司事件", "监管", "行业", "情绪"], "description": "包含归因维度"},
+        {"type": "contains", "value": "综合", "description": "包含综合判断"}
+      ]
+    },
+    {
+      "id": "E17-fund-ask",
+      "skill": "/fund-ask",
+      "description": "大师问答应第一人称回答",
+      "prompt": "段永平怎么看红利低波策略",
+      "assertions": [
+        {"type": "contains_any", "value": ["我", "本人"], "description": "使用第一人称"},
+        {"type": "contains_any", "value": ["生意", "本分", "护城河"], "description": "包含大师风格关键词"}
+      ]
+    },
+    {
+      "id": "E18-financial-data",
+      "skill": "/financial-data",
+      "description": "数据验证应输出双源对比",
+      "prompt": "验证中欧新趋势混合的规模数据",
+      "assertions": [
+        {"type": "contains", "value": "来源", "description": "标注数据来源"},
+        {"type": "contains_any", "value": ["一致", "偏差"], "description": "包含一致性判断"}
+      ]
+    },
+    {
+      "id": "E19-fund-article",
+      "skill": "/fund-article",
+      "description": "写作工厂应输出可发布文章",
+      "prompt": "写一篇电池行业的公众号文章",
+      "assertions": [
+        {"type": "contains_any", "value": ["标题", "## "], "description": "包含文章结构"},
+        {"type": "contains", "value": "免责声明", "description": "包含免责声明"},
+        {"type": "contains_any", "value": ["数据", "分析"], "description": "包含数据引用"}
+      ]
+    }
+  ]
+}
