@@ -239,10 +239,10 @@ def fetch_sector_news(sector):
     except Exception as e:
         print(f"[WARN] 全市场新闻失败({sector}): {e}", file=sys.stderr)
 
-    # Level 3: 百度财经经济新闻
+    # Level 3: 百度经济新闻（D4修复：适配 AKShare 新签名 date/cookie）
     try:
         import akshare as ak
-        df = ak.news_economic_baidu(category="股票")
+        df = ak.news_economic_baidu()
         if df is not None and len(df) > 0:
             print(f"[INFO] 新闻来源：百度财经（{sector}）", file=sys.stderr)
             result = _classify_news(df, sector)

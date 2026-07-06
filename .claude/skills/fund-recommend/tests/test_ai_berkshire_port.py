@@ -172,6 +172,20 @@ def test_e2e_benign_not_rejected():
         assert "005561" not in codes, "005561 不应被否决"
 
 
+# ---------------------------------------------------------------------------
+# F. D4: 新闻搜索三级降级适配 AKShare 新签名
+# ---------------------------------------------------------------------------
+def test_news_level3_new_signature():
+    """D4: search_news.py 必须调用 news_economic_baidu() 无 category 参数（适配新签名）"""
+    src = read(SCRIPTS / "search_news.py")
+    # 新签名: news_economic_baidu(date, cookie) — 不再接受 category
+    assert 'news_economic_baidu(category=' not in src, \
+        "D4 未修复：仍使用废弃的 category= 参数"
+    # 必须仍存在降级调用（无参或仅 date/cookie）
+    assert "news_economic_baidu()" in src or "news_economic_baidu(" in src, \
+        "缺少百度新闻三级降级调用"
+
+
 def test_annualized():
     """区间年化：0.95 → 1.0553 / 180 天"""
     r = run_rigor("annualized", "--start-nav", "0.95", "--end-nav", "1.0553", "--days", "180")
