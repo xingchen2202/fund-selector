@@ -271,6 +271,72 @@ def test_dca_uses_declared_monthly():
     assert int(nums[2]) < 18000, f"月投3000的悲观终值应低于本金18000: {out}"
 
 
+# ---------------------------------------------------------------------------
+# H. 移植 ai-berkshire: 镜子测试 + 六关评分
+# ---------------------------------------------------------------------------
+def test_mirror_test_5_sentences():
+    """镜子测试：输出应包含 5 个分号分隔的句子"""
+    g = _import_generate()
+    c = {"sector": "混合"}
+    detail = {"manager": "张三", "fee_total": 1.2, "max_drawdown": -0.20,
+              "return_1y": 0.05}
+    out = g.build_mirror_test(c, detail)
+    sentences = [s for s in out.split("；") if s.strip()]
+    assert len(sentences) == 5, f"镜子测试应为 5 句话，实际 {len(sentences)}: {out}"
+
+
+def test_mirror_test_flags_missing_data():
+    """镜子测试：数据缺失时应出现 [待填] 提示"""
+    g = _import_generate()
+    c = {"sector": "混合"}
+    detail = {}  # 全空
+    out = g.build_mirror_test(c, detail)
+    assert "[待填" in out, f"数据缺失时应标注 [待填]: {out}"
+
+
+def test_six_gates_all_scored():
+    """六关评分：6 关都应打分，返回综合评级"""
+    g = _import_generate()
+    c = {"sector": "混合"}
+    detail = {"return_1y": 0.10, "fee_total": 1.2, "manager_years": 5,
+              "max_drawdown": -0.20}
+    richness = {"grade": "A"}
+    r = g.score_six_gates(c, detail, richness)
+    assert len(r["gates"]) == 6, f"应为 6 关，实际 {len(r['gates'])}"
+    assert r["rating"] in ("推荐", "观察", "谨慎")
+    assert 1 <= r["average"] <= 5
+
+
+def test_six_gates_overloaded_penalty():
+    """六关评分：已超配板块的基金在'组合适配性'被扣分"""
+    g = _import_generate()
+    detail = {"return_1y": 0.10, "fee_total": 1.2, "manager_years": 5,
+              "max_drawdown": -0.20}
+    richness = {"grade": "A"}
+    # 未超配
+    r_ok = g.score_six_gates({"sector": "混合"}, detail, richness, {})
+    # 已超配
+    r_bad = g.score_six_gates({"sector": "科技成长"}, detail, richness,
+                              {"科技成长": 33.0})
+    assert r_bad["gates"]["组合适配性"] < r_ok["gates"]["组合适配性"], \
+        "已超配板块应降低组合适配性评分"
+
+
+def test_six_gates_drawdown_safety():
+    """六关评分：回撤越大，安全边际分越低"""
+    g = _import_generate()
+    c = {"sector": "混合"}
+    richness = {"grade": "A"}
+    detail_safe = {"return_1y": 0.05, "fee_total": 1.0, "manager_years": 5,
+                   "max_drawdown": -0.10}
+    detail_risky = {"return_1y": 0.05, "fee_total": 1.0, "manager_years": 5,
+                    "max_drawdown": -0.60}
+    r_safe = g.score_six_gates(c, detail_safe, richness)
+    r_risky = g.score_six_gates(c, detail_risky, richness)
+    assert r_safe["gates"]["回撤安全边际"] > r_risky["gates"]["回撤安全边际"], \
+        "回撤越大安全边际分应越低"
+
+
 def test_annualized():
     """区间年化：0.95 → 1.0553 / 180 天"""
     r = run_rigor("annualized", "--start-nav", "0.95", "--end-nav", "1.0553", "--days", "180")

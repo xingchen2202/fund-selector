@@ -178,6 +178,91 @@ def build_dca_scenarios(c: dict, fund_detail: dict, monthly: float = None) -> st
     return " / ".join(parts)
 
 
+# ---------------------------------------------------------------------------
+# 移植自 ai-berkshire: 镜子测试 + 六关评分
+# ---------------------------------------------------------------------------
+
+def build_mirror_test(c: dict, fund_detail: dict) -> str:
+    """镜子测试（移植自 ai-berkshire 5-sentence test）。
+
+    强制用 5 句话说清投资逻辑，说不清 = 不买。
+    返回 5 句话拼接；任一句无法填出则标注 [待填]。
+    """
+    sector = c.get("sector", "未知")
+    max_dd = fund_detail.get("max_drawdown")
+    return_1y = fund_detail.get("return_1y")
+    age_years = fund_detail.get("age_years")
+    manager = fund_detail.get("manager") or "[待填-经理]"
+    fee = fund_detail.get("fee_total") or fund_detail.get("fee")
+
+    s1 = f"我理解这只{sector}基金靠底层资产配置赚钱"
+    s2 = f"它的核心优势是{manager}管理 + 总费率{fee or '[待填]'}%"
+    if isinstance(max_dd, (int, float)):
+        s3 = f"当前最大回撤 {max_dd:.0%}，我能承受"
+    else:
+        s3 = "当前最大回撤 [待填-回撤]，我能承受 [待填] 的下跌"
+    if isinstance(return_1y, (int, float)):
+        s4 = f"近1年回报 {return_1y:+.1%}，预期持有 3 年以上"
+    else:
+        s4 = "近1年回报 [待填]，预期持有 [待填] 年以上"
+    s5 = f"即使归零，仓位占比不超过组合 5%，可承受"
+    return "；".join([s1, s2, s3, s4, s5])
+
+
+def score_six_gates(c: dict, fund_detail: dict, richness: dict,
+                    overloaded_sectors: dict = None) -> dict:
+    """六关评分（移植自 ai-berkshire 六关 Checklist，适配基金版）。
+
+    六关：底层资产清晰度 / 行业景气度 / 经理能力 / 经理稳定性 / 回撤安全边际 / 组合适配性。
+    每关 ★1-5，返回各关得分 + 综合评级。
+    overloaded_sectors: 已超配板块 dict，用于关6组合适配性扣分。
+    """
+    overloaded = overloaded_sectors or {}
+
+    # 关1: 底层资产清晰度（能力圈）— 信息丰富度越高越清晰
+    clarity = {"A": 5, "B": 3, "C": 1}.get(richness.get("grade", "C"), 2)
+
+    # 关2: 行业景气度（好生意）— 基于近1年收益
+    ret = fund_detail.get("return_1y")
+    if isinstance(ret, (int, float)):
+        prospect = 5 if ret > 0.15 else (4 if ret > 0.05 else (3 if ret > -0.05 else 2))
+    else:
+        prospect = 3  # 未知给中位
+
+    # 关3: 经理能力（护城河）— 费率越低、经理越资深
+    fee = fund_detail.get("fee_total") or fund_detail.get("fee") or 1.5
+    mgr_years = fund_detail.get("manager_years") or 0
+    ability = 5 if (float(fee) < 1.0 and mgr_years > 5) else \
+              4 if (float(fee) < 1.5 and mgr_years > 3) else \
+              3 if (float(fee) < 2.0) else 2
+
+    # 关4: 经理稳定性（管理层）— 任职年限
+    stability = 5 if mgr_years > 7 else (4 if mgr_years > 4 else (3 if mgr_years > 2 else 2))
+
+    # 关5: 回撤安全边际 — 回撤越小越好
+    max_dd = fund_detail.get("max_drawdown")
+    if isinstance(max_dd, (int, float)):
+        safety = 5 if max_dd > -0.15 else (4 if max_dd > -0.25 else (3 if max_dd > -0.35 else 1))
+    else:
+        safety = 3
+
+    # 关6: 组合适配性（仓位纪律）— 已超配板块扣分
+    sector = c.get("sector", "")
+    fit = 2 if sector in overloaded else (4 if richness.get("grade") == "A" else 3)
+
+    gates = {
+        "底层资产清晰度": clarity,
+        "行业景气度": prospect,
+        "经理能力": ability,
+        "经理稳定性": stability,
+        "回撤安全边际": safety,
+        "组合适配性": fit,
+    }
+    avg = sum(gates.values()) / len(gates)
+    return {"gates": gates, "average": round(avg, 1),
+            "rating": "推荐" if avg >= 3.5 else ("观察" if avg >= 2.5 else "谨慎")}
+
+
 def generate_report(data: dict) -> str:
     """生成报告文本"""
     now = datetime.now()
@@ -401,6 +486,15 @@ def generate_report(data: dict) -> str:
         # 移植 ai-berkshire: 芒格反向测试
         lines.append(f"[反向测试]")
         lines.append(f"  若判断错误，最可能原因：{build_reverse_test(c, fund_detail)}")
+        # 移植 ai-berkshire: 六关评分
+        gates = score_six_gates(c, fund_detail, richness,
+                                overloaded_sectors=data.get("overloaded_sectors"))
+        gate_str = " ".join(f"{k}{'★'*v}{'☆'*(5-v)}" for k, v in gates["gates"].items())
+        lines.append(f"[六关评分] 均分 {gates['average']} → {gates['rating']}")
+        lines.append(f"  {gate_str}")
+        # 移植 ai-berkshire: 镜子测试（5 句话逻辑自检）
+        lines.append(f"[镜子测试]")
+        lines.append(f"  {build_mirror_test(c, fund_detail)}")
         lines.append(f"[VaR 影响]")
         # P8修复：使用 calc_var_impact.py 计算的 var_display（含真实波动率）
         var_display = var_info.get("var_display")
