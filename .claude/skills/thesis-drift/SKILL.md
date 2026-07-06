@@ -1,0 +1,43 @@
+---
+name: thesis-drift
+description: >
+  区分事实变化 vs 价格变化 vs 措辞变化
+  when_to_use: 用户询问相关基金研究问题时触发
+disable-model-invocation: false
+user-invocable: true
+allowed-tools: Read Write Bash Python mcp__cn-financial mcp__cn-mutual-fund mcp__tavily mcp__node_repl
+effort: high
+---
+
+
+区分"事实变化"vs"价格变化"vs"措辞变化"，判断是否需要调仓。
+
+## 触发
+"逻辑漂移"、"该卖了吗"、"持有理由变化"
+
+## 漂移类型
+| 类型 | 含义 | 需要行动 |
+|------|------|---------|
+| 事实变化 | 底层资产发生实质性变化 | ✅ 必须重新评估 |
+| 价格变化 | 仅市场情绪导致价格波动 | ❌ 不需要 |
+| 措辞变化 | 报告语言风格变化 | ⚠️ 需结合其他信号 |
+
+## 流程
+1. 获取期初和期末两份报告
+2. 逐段比对：事实数据/推理逻辑/语言表述
+3. 漂移分类 + 严重程度评级
+4. 操作建议（持有/加仓/减仓/清仓）
+
+## 输出
+- 漂移类型 + 严重程度
+- 操作建议
+
+## 工具依赖
+- `mcp__cn-mutual-fund` — 基金信息/净值/经理/持仓获取
+- `mcp__cn-financial` — A股行情/宏观/行业数据
+- `tools/financial_rigor.py` — Decimal 精度验算（verify-scale/cross-validate）
+
+## 失败处理
+- MCP 超时/异常 → 标注"数据不可用"并继续，不中止整体流程
+- MCP 返回陈旧数据（如 2014 年北向资金）→ 标注异常跳过该维度
+- 全部 MCP 失败 → 输出"当前无法获取实时数据，请稍后重试"

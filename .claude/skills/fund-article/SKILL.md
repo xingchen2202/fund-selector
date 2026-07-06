@@ -1,0 +1,44 @@
+---
+name: fund-article
+description: >
+  3 Agent 写作工厂：作者 → 编辑 → 审阅
+  when_to_use: 用户询问相关基金研究问题时触发
+disable-model-invocation: false
+user-invocable: true
+allowed-tools: Read Write Bash Python mcp__cn-financial mcp__cn-mutual-fund mcp__tavily mcp__node_repl
+effort: high
+---
+
+
+3 Agent 写作工厂：作者 → 编辑 → 审阅，产出公众号可发文章。
+
+## 触发
+"写篇研报"、"公众号文章"、"投资笔记"
+
+## 团队结构
+| Agent | 任务 |
+|-------|------|
+| 作者 Agent | 基于研究数据撰写初稿 |
+| 编辑 Agent | 润色排版 + 公众号风格 |
+| 审阅 Agent | 读者视角挑刺 + 事实核查 |
+
+## 流程
+1. 作者 Agent 读取研究数据（step3/step4 输出）
+2. 撰写初稿（含数据引用）
+3. 编辑 Agent 润色（标题/段落/排版）
+4. 审阅 Agent 抽样验证 15% 数据点
+5. 终稿输出
+
+## 输出
+- 公众号格式研报（Markdown）
+- 数据附录 + 来源标注
+
+## 工具依赖
+- `mcp__cn-mutual-fund` — 基金信息/净值/经理/持仓获取
+- `mcp__cn-financial` — A股行情/宏观/行业数据
+- `tools/financial_rigor.py` — Decimal 精度验算（verify-scale/cross-validate）
+
+## 失败处理
+- MCP 超时/异常 → 标注"数据不可用"并继续，不中止整体流程
+- MCP 返回陈旧数据（如 2014 年北向资金）→ 标注异常跳过该维度
+- 全部 MCP 失败 → 输出"当前无法获取实时数据，请稍后重试"

@@ -1,0 +1,44 @@
+---
+name: financial-data
+description: >
+  对单一数据点进行跨来源验证，确保数据可信
+  when_to_use: 用户询问相关基金研究问题时触发
+disable-model-invocation: false
+user-invocable: true
+allowed-tools: Read Write Bash Python mcp__cn-financial mcp__cn-mutual-fund mcp__tavily mcp__node_repl
+effort: high
+---
+
+
+对单一数据点进行跨来源验证，确保数据可信。
+
+## 触发
+"数据验证"、"交叉核对"、"数据可信吗"
+
+## 流程
+1. 提取待验证数据点（如"基金规模为 4.42 亿"）
+2. 独立检索至少两个来源（MCP + Excel/东方财富/天天基金）
+3. 偏差 >1% 标记异常
+4. 输出共识值 + 偏差报告
+
+## 标准
+| 偏差范围 | 可信度 |
+|---------|--------|
+| ≤1% | ✅ 可信 |
+| 1-5% | ⚠️ 供参考 |
+| >5% | ❌ 不可信，需人工核实 |
+
+## 输出
+- 各来源数据 + 偏差表
+- 共识值
+- 可信度评级
+
+## 工具依赖
+- `mcp__cn-mutual-fund` — 基金信息/净值/经理/持仓获取
+- `mcp__cn-financial` — A股行情/宏观/行业数据
+- `tools/financial_rigor.py` — Decimal 精度验算（verify-scale/cross-validate）
+
+## 失败处理
+- MCP 超时/异常 → 标注"数据不可用"并继续，不中止整体流程
+- MCP 返回陈旧数据（如 2014 年北向资金）→ 标注异常跳过该维度
+- 全部 MCP 失败 → 输出"当前无法获取实时数据，请稍后重试"

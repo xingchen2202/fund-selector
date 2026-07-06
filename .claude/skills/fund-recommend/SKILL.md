@@ -17,7 +17,36 @@ effort: high
 # 基金筛选推荐 Skill
 
 基于宏观数据 + 现有组合约束 + 新闻背景，筛选候选基金并分析组合影响。
-移植增强：集成 ai-berkshire (MIT) 的「快否决清单 + Decimal 精度工具」防偏差机制。
+移植增强：集成 ai-berkshire (MIT) 的「双 Agent 对抗分析 + 快否决清单 + 镜子测试 + Decimal 精度工具」防偏差机制。
+
+## 架构（三层）
+
+| 层级 | 组件 | 说明 |
+|------|------|------|
+| **Agent 层** | `agents/offense_agent.py` | 进攻视角（成长/动量/赛道）|
+|             | `agents/defense_agent.py` | 防守视角（回撤/波动/稳定性）|
+|             | `agents/synthesizer.py`   | 双视角综合 + 冲突检测 |
+| **Skill 层** | `/fund-recommend`         | 主入口（单 Agent pipeline）|
+| **工具层** | `scripts/financial_rigor.py` | Decimal 精度验算 |
+|             | `scripts/rejection_checklist.py` | 6 条一票否决红线 |
+|             | `scripts/generate_recommend.py` | 报告生成（含 6 个移植函数）|
+
+## 运行模式
+
+### 模式 A：单 Agent（默认）
+```
+Step 0 → Step 1 → Step 2 → Step 3 → Step 3.5 → Step 4 → Step 5 → Step 7
+```
+适用于快速筛选，MCP 调用量 ~30 次。
+
+### 模式 B：双 Agent（--team 参数，实验性）
+```
+Step 0 → Step 1 → Step 2 → Step 3
+  ├─ 进攻 Agent → _agent_offense.json
+  ├─ 防守 Agent → _agent_defense.json
+  └─ 综合器 → _agent_synthesized.json → Step 7（含双 Agent 段落）
+```
+适用于深度投研，两个视角并行分析后综合，可暴露单一视角盲区。
 
 ## 执行前准备 (MUST)
 

@@ -24,6 +24,8 @@ effort: high
 
 ## 路由表（用户意图 → Skill）
 
+> 以下 19 个 skill 均为**独立注册**的 Claude Code skill，可通过 `/<skill-name>` 直接触发。
+
 ### 深度研究
 | 触发词 | Skill | 类型 |
 |--------|-------|------|

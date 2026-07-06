@@ -1,0 +1,40 @@
+---
+name: fund-checklist
+description: >
+  6 关检查清单，审慎决策前逐条核对
+  when_to_use: 用户询问相关基金研究问题时触发
+disable-model-invocation: false
+user-invocable: true
+allowed-tools: Read Write Bash Python mcp__cn-financial mcp__cn-mutual-fund mcp__tavily mcp__node_repl
+effort: high
+---
+
+
+6 关检查清单，审慎决策前逐条核对。
+
+## 触发
+"买入前检查"、"投资清单"、"检查清单"
+
+## 6 关
+| 关 | 检查项 | 标准 |
+|---|--------|------|
+| 1 能力圈 | 我理解这只基金的底层资产吗 | 能用 1-2 句话说清 |
+| 2 好生意 | 底层行业有护城河吗 | 竞争格局清晰 |
+| 3 护城河 | 基金经理有超额收益能力吗 | 连续 3 年跑赢基准 |
+| 4 管理层 | 基金经理值得信赖吗 | 无诚信污点 + 利益一致 |
+| 5 安全边际 | 当前估值合理吗 | 低于历史 30% 分位 |
+| 6 仓位纪律 | 归零能承受吗 | ≤ 组合 5% |
+
+## 输出
+- 逐关检查结果（✅/⚠️/❌）
+- 综合结论（建议买入/观察/放弃）
+
+## 工具依赖
+- `mcp__cn-mutual-fund` — 基金信息/净值/经理/持仓获取
+- `mcp__cn-financial` — A股行情/宏观/行业数据
+- `tools/financial_rigor.py` — Decimal 精度验算（verify-scale/cross-validate）
+
+## 失败处理
+- MCP 超时/异常 → 标注"数据不可用"并继续，不中止整体流程
+- MCP 返回陈旧数据（如 2014 年北向资金）→ 标注异常跳过该维度
+- 全部 MCP 失败 → 输出"当前无法获取实时数据，请稍后重试"

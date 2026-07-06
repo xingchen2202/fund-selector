@@ -1,0 +1,39 @@
+---
+name: industry-research
+description: >
+  研究特定行业的产业链图谱、各环节公司、竞争格局
+  when_to_use: 用户询问相关基金研究问题时触发
+disable-model-invocation: false
+user-invocable: true
+allowed-tools: Read Write Bash Python mcp__cn-financial mcp__cn-mutual-fund mcp__tavily mcp__node_repl
+effort: high
+---
+
+
+研究特定行业的产业链图谱、各环节公司、竞争格局。
+
+## 触发
+"XX 行业研究"、"产业链分析"
+
+## 流程
+1. 产业链图谱：上游 → 中游 → 下游
+2. 各环节代表公司 + 市场份额
+3. 关键瓶颈环节识别
+4. 景气度判断（资本开支 + 订单 + 价格）
+5. 投资逻辑提炼
+
+## 输出
+- 产业链图谱
+- 各环节深度分析
+- 景气度评估
+- 投资建议
+
+## 工具依赖
+- `mcp__cn-mutual-fund` — 基金信息/净值/经理/持仓获取
+- `mcp__cn-financial` — A股行情/宏观/行业数据
+- `tools/financial_rigor.py` — Decimal 精度验算（verify-scale/cross-validate）
+
+## 失败处理
+- MCP 超时/异常 → 标注"数据不可用"并继续，不中止整体流程
+- MCP 返回陈旧数据（如 2014 年北向资金）→ 标注异常跳过该维度
+- 全部 MCP 失败 → 输出"当前无法获取实时数据，请稍后重试"

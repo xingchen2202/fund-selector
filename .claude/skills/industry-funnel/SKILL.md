@@ -1,0 +1,37 @@
+---
+name: industry-funnel
+description: >
+  全市场多维度漏斗筛选：30-60 → ≤10 → 3
+  when_to_use: 用户询问相关基金研究问题时触发
+disable-model-invocation: false
+user-invocable: true
+allowed-tools: Read Write Bash Python mcp__cn-financial mcp__cn-mutual-fund mcp__tavily mcp__node_repl
+effort: high
+---
+
+
+全市场多维度漏斗筛选：30-60 → ≤10 → 3 精选，含否决轨迹。
+
+## 触发
+"全市场筛选"、"漏斗精选"、"批量筛选"
+
+## 漏斗层级
+| 层级 | 条件 | 输出数量 |
+|------|------|---------|
+| L1 初筛 | 规模>2亿 + 经理>1年 + 业绩>基准 | 30-60 |
+| L2 精筛 | 六关评分≥3 + 回撤<阈值 | ≤10 |
+| L3 精选 | 冲突检测 + 互补性检查 | 3 |
+
+## 输出
+- 每层筛选结果 + 否决轨迹
+- 3 只精选基金 + 推荐理由
+
+## 工具依赖
+- `mcp__cn-mutual-fund` — 基金信息/净值/经理/持仓获取
+- `mcp__cn-financial` — A股行情/宏观/行业数据
+- `tools/financial_rigor.py` — Decimal 精度验算（verify-scale/cross-validate）
+
+## 失败处理
+- MCP 超时/异常 → 标注"数据不可用"并继续，不中止整体流程
+- MCP 返回陈旧数据（如 2014 年北向资金）→ 标注异常跳过该维度
+- 全部 MCP 失败 → 输出"当前无法获取实时数据，请稍后重试"

@@ -1,0 +1,40 @@
+---
+name: thesis-tracker
+description: >
+  定期检查已买入基金是否仍符合投资逻辑
+  when_to_use: 用户询问相关基金研究问题时触发
+disable-model-invocation: false
+user-invocable: true
+allowed-tools: Read Write Bash Python mcp__cn-financial mcp__cn-mutual-fund mcp__tavily mcp__node_repl
+effort: high
+---
+
+
+定期检查已买入基金是否仍符合投资逻辑。
+
+## 触发
+"买入后追踪"、"季度复盘"、"该加仓吗"
+
+## 检查维度
+| 维度 | 频率 | 触发条件 |
+|------|------|---------|
+| 业绩 | 月度 | 连续 3 月跑输基准 >5% |
+| 经理 | 实时 | 基金经理变更 |
+| 估值 | 季度 | PE/PB 分位 >70% |
+| 基本面 | 半年 | 底层行业景气度逆转 |
+| 仓位 | 季度 | 偏离目标 >10% |
+
+## 输出
+- 各项指标状态（绿/黄/红）
+- 触发项 + 建议操作
+- 止盈/止损提醒
+
+## 工具依赖
+- `mcp__cn-mutual-fund` — 基金信息/净值/经理/持仓获取
+- `mcp__cn-financial` — A股行情/宏观/行业数据
+- `tools/financial_rigor.py` — Decimal 精度验算（verify-scale/cross-validate）
+
+## 失败处理
+- MCP 超时/异常 → 标注"数据不可用"并继续，不中止整体流程
+- MCP 返回陈旧数据（如 2014 年北向资金）→ 标注异常跳过该维度
+- 全部 MCP 失败 → 输出"当前无法获取实时数据，请稍后重试"
