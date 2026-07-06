@@ -1,120 +1,299 @@
-# Fund Selector — 基金投研助手
+# Fund Selector — A 股公募基金投研助手
 
-基于 Claude Code + MCP 的 A 股公募基金持仓研究与交易规划助手。
+> "一个人 + Claude Code = 一个投研团队。"
 
-## 项目简介
+**Fund Selector v2.0** 是一套基于三层架构哲学的 A 股公募基金投研 Skill 合集，将价值投资的对抗式多视角方法论与 AI Agent 结合，覆盖深度研究、财报分析、行业筛选、持仓管理、思维工具五大场景。
 
-本项目通过 Claude Code 的 MCP 协议和 Skill 机制，实现：
+基于 Claude Code + MCP（cn-financial / cn-mutual-fund）实时数据，**44 个自动化测试全绿**，保证每份报告的数据严谨性可验证。
 
-- **基金持仓跟踪**：自动获取最新净值、计算盈亏、生成周报
-- **智能筛选**：基于 AKShare 数据的基金筛选和经理画像
-- **资产配置**：宏观研判 + 股债比例建议 + 执行计划
-- **产业链投资**：紫苏叶理论（供应链隐形冠军筛选）
+[为什么不能直接问 AI](#为什么不能直接问-ai) · [Skills 一览（19 个）](#skills-一览19个) · [快速开始](#快速开始) · [架构设计](#架构设计) · [测试覆盖](#测试覆盖)
 
-## 项目结构
+---
 
+## 为什么不能直接问 AI？
+
+你可以直接问 Claude："帮我分析一下中欧新趋势混合基金"。你会得到一篇"一方面...另一方面..."的平衡分析，最后以"投资有风险，请自行判断"收尾。
+
+**这种分析看起来对，但没法拿来做决策。**
+
+Fund Selector 解决的不是"能不能分析"的问题，而是**分析质量和决策纪律**的问题。
+
+### 1. 强制给结论，不打太极
+
+直接问 AI，你得到的是两面讨好的"分析"。Fund Selector 强制输出：**推荐 / 观察 / 谨慎**，附带具体理由和风险分级。
+
+> 普通 AI 回答：*"中欧新趋势混合基金业绩优秀，但近期回撤较大，投资者需要权衡..."*
+>
+> Fund Selector 输出：
+>
+> | 维度 | 结论 | 信心度 |
+> |------|------|--------|
+> | 财务质量 | 规模 28.93 亿，费率 1.5%，经理周蔚文 10 年+ | ★★★★★ |
+> | 估值安全边际 | 近 1 年 +4.9%，回撤 -64.5%（突破阈值）| ⚠️ 高风险 |
+> | 最大风险 | 权益类回撤超 -35% 阈值，触发 R3 一票否决 | ❌ 排除 |
+>
+> **快否决清单**：最大回撤 -64.5% < -35% → 直接否决，不进入推荐。
+
+### 2. 双 Agent 对抗，而非单一分析
+
+不是"用巴菲特方法分析一下"这么简单。两个视角会产生**真实的矛盾和张力**——
+
+以候选基金池为例：
+- **进攻 Agent**（成长视角）：南方电池 C +66.88%，动量强，电池赛道景气 → 评分 5 星
+- **防守 Agent**（风控视角）：南方电池 C 回撤 -27.86%，波动率 12.1% → 评分 4 星
+
+**进攻说"强"，防守说"有风险"**——这种冲突才是投资决策的真实状态。单一 prompt 无法制造这种多视角对抗，而这恰恰是避免盲点的关键。
+
+### 3. 结构化反偏见机制
+
+| 机制 | 解决什么问题 |
+|------|------------|
+| **信息丰富度分级（A/B/C）** | 防止"资料多=确定性高"的幻觉 |
+| **快否决清单（6 条红线）** | 回撤 >35% / 诚信污点等直接否决 |
+| **镜子测试（5 句话）** | 说不清逻辑 = 不买 |
+| **反向测试** | "如果判断错了，最可能原因" |
+| **六关评分（★1-5）** | 多维度量化，避免单一指标偏见 |
+
+### 4. 金融数据的精确性
+
+LLM 心算不可靠。PE 算错一个小数点、市值单位搞混，就可能导致错误的投资决策。
+
+```bash
+# 规模手算校验：份额 × 净值 vs 报告规模
+python tools/financial_rigor.py verify-scale \
+  --nav 1.0553 --shares 4.42e8 --reported 4.68e8
+# ✅ 验证通过, 偏差仅 0.33%
 ```
-├── .claude/
-│   ├── skills/                    ← 自定义 Skills
-│   │   ├── _shared/               ← 共享知识库（规则、板块映射等）
-│   │   ├── fund-recommend/        ← 基金筛选推荐
-│   │   ├── fund-weekly-report/    ← 基金持仓周报
-│   │   ├── fund-screener/         ← 基金筛选器
-│   │   ├── manager-profiler/      ← 基金经理画像
-│   │   ├── asset-allocation/      ← 大类资产配置
-│   │   └── execution-planner/     ← 交易执行计划
-│   └── settings.local.json        ← 本地配置（不上传）
-├── cn-financial-mcp/              ← A 股个股/宏观数据（akshare）
-├── cn-mutual-fund/                ← 公募基金数据（akshare）
-├── FinanceAgent/                  ← 美股组合管理
-├── registry/                      ← Skill 注册表
-├── portfolio.json                 ← 持仓数据（私有，不上传）
-├── fund-reports/                  ← 生成的报告（不上传）
-└── README.md                      ← 本文件
+
+所有计算使用 Python `decimal.Decimal`（精确十进制），不用 `float`。关键数据至少 2 个独立来源交叉验证。
+
+### 5. 可复现的研究流程
+
+直接问 AI，每次输出的格式、深度、覆盖面都不一样。Fund Selector 确保：**同样的输入 → 结构一致、深度一致的输出**。
+
+### 6. 44 个自动化测试 = 质量底线
+
+每个关键函数都有单元测试覆盖，重构和功能扩展有安全网。
+
+```bash
+# 运行全量测试
+python .claude/skills/fund-selector/tests/agents/test_agents_v2.py
+python .claude/skills/fund-selector/tests/tools/test_tools.py
+# 结果：44/44 全绿 ✅
 ```
 
-## Skills 说明
+---
 
-### 共享知识库（`_shared/`）
+## 整体架构
 
-多个 Skill 共享的知识文件，避免重复维护：
+**三层设计哲学**：
 
-| 文件 | 用途 | 使用方 |
-|------|------|--------|
-| `rule-definitions.md` | 筛选规则 + 预警阈值 | fund-recommend, fund-weekly-report |
-| `sector-map.md` | 基金代码→板块映射 + 新闻关键词 | fund-recommend, fund-weekly-report |
-| `portfolio-schema.md` | 持仓 JSON 格式规范 | fund-weekly-report |
-| `macro-cycle-guide.md` | 经济周期判断逻辑 | fund-recommend |
-| `perilla-framework.md` | 持仓穿透分析标准 | fund-recommend |
+- **Skill 层**：把"你要做什么"抽象成 19 个明确入口——深度研究、财报分析、行业筛选、持仓管理、思维工具，按场景选用
+- **Agent 层**：团队型 skill（如 `/fund-team`、`/news-pulse`）由 Team Lead 并行调度 4 个大师视角 Agent——各自独立搜索、独立判断、互相挑战，最后综合研判；轻量 skill 不经过这一层，直连工具快进快出
+- **工具层**：精确计算、实时检索、报告抽检——保证每份报告的数据严谨性可验证
 
-### 主要 Skills
+---
 
-| Skill | 触发方式 | 功能 |
-|-------|---------|------|
-| `fund-recommend` | "推荐基金" / "买什么" | 4 步流程：宏观→配置→筛选→执行计划 |
-| `fund-weekly-report` | "生成报告" / "查看持仓" | 最新净值 + 盈亏 + 板块新闻 + 规则提示 |
-| `fund-screener` | "筛选基金" | 多维度基金筛选 |
-| `manager-profiler` | "XX经理怎么样" | 从业年限 + 管理产品 + 历史业绩 |
-| `asset-allocation` | "当前市场环境" | PE/PB 估值 + 景气度 + 建议比例 |
-| `execution-planner` | "怎么买" / "定投方案" | 分批建仓 + 网格策略 |
+## Skills 一览（19 个）
+
+### 深度研究类（5 个）
+
+| Skill | 用途 | 类型 |
+|-------|------|------|
+| `/fund-deep-research` | 单基金深度研究（穿透+六关评分+镜子测试）| 轻量 |
+| `/fund-team` | 多 Agent 并行投研团队 | 团队型 |
+| `/manager-deep-dive` | 基金经理深度画像 | 轻量 |
+| `/private-fund-research` | 私募/非公开基金研究 | 轻量 |
+| `/fund-series` | 基金系列研报（8 篇）| 团队型 |
+
+### 财报分析类（2 个）
+
+| Skill | 用途 | 类型 |
+|-------|------|------|
+| `/fund-earnings-review` | 季报/年报解读 | 轻量 |
+| `/fund-earnings-team` | 多视角财报解读团队 | 团队型 |
+
+### 行业筛选类（5 个）
+
+| Skill | 用途 | 类型 |
+|-------|------|------|
+| `/industry-research` | 行业产业链研究 | 轻量 |
+| `/industry-funnel` | 全市场漏斗筛选（30-60→≤10→3）| 轻量 |
+| `/quality-screen` | 质量排除筛选（7 硬规则+3 豁免）| 轻量 |
+| `/bottleneck-hunter` | 供应链瓶颈套利 | 轻量 |
+| `/fund-checklist` | 买入前 6 关检查清单 | 轻量 |
+
+### 持仓管理类（4 个）
+
+| Skill | 用途 | 类型 |
+|-------|------|------|
+| `/portfolio-review` | 持仓组合管理 | 轻量 |
+| `/thesis-tracker` | 买入后追踪（季度复盘）| 轻量 |
+| `/thesis-drift` | 投资逻辑漂移检测 | 轻量 |
+| `/news-pulse` | 快讯多源归因（10 分钟响应）| 团队型 |
+
+### 思维工具类（3 个）
+
+| Skill | 用途 | 类型 |
+|-------|------|------|
+| `/fund-ask` | 大师问答模拟（巴菲特/段永平/芒格/李录）| 轻量 |
+| `/financial-data` | 双源数据交叉验证 | 轻量 |
+| `/fund-article` | 研报写作工厂 | 团队型 |
+
+---
 
 ## 快速开始
 
-### 1. 安装依赖
+### 1. 环境要求
+
+- Claude Code：`npm install -g @anthropic-ai/claude-code`
+- Python >= 3.7（仅 stdlib，无需 pip install）
+- MCP 服务器：cn-financial + cn-mutual-fund（已配置于 `.mcp.json`）
+
+### 2. 安装
 
 ```bash
-pip install akshare pandas tavily-python
+# 克隆仓库
+git clone <your-repo-url> fund-selector
+cd fund-selector
+
+# 验证 MCP 连接
+# 在 Claude Code 中运行：
+# > /mcp
+# 确认 cn-financial 和 cn-mutual-fund 状态为 ✓ connected
 ```
 
-### 2. 配置持仓
+### 3. 使用
 
-编辑 `portfolio.json`，填入你的基金代码、份额和成本净值：
+```bash
+# 深度研究
+/fund-deep-research 中欧新趋势混合
+/fund-team 国泰有色矿业
 
-```json
-{
-  "funds": [
-    {
-      "code": "004597",
-      "name": "鹏华中证银行指数LOF C",
-      "units": 6136.58,
-      "cost_nav": 1.4128,
-      "cost_value": 8045.67
-    }
-  ],
-  "last_updated": "2026-06-28",
-  "data_source": "alipay-portfolio-snapshot"
-}
+# 行业筛选
+/industry-funnel 电池
+/quality-screen 沪深300成分股
+/fund-checklist 易方达蓝筹, 中欧医疗, 招商白酒
+
+# 持仓管理
+/portfolio-review
+/thesis-tracker 001198
+/news-pulse 018167
+
+# 思维工具
+/fund-ask 红利低波策略现在还能买吗？
+/financial-data 中欧新趋势混合 规模
+/fund-article 电池行业
 ```
 
-### 3. 使用方式
+---
 
-在 Claude Code 中直接对话：
+## Agent 层（团队型 Skill 专用）
 
-- **生成周报**：`/fund-weekly-report` 或说"生成报告"
-- **筛选基金**：`/fund-recommend` 或说"推荐基金"
-- **查看经理**：说"张坤怎么样"
+### 4 大师视角
 
-## 投资铁律
+| Agent | 视角 | 核心问题 |
+|-------|------|---------|
+| 进攻 Agent | 段永平 | 成长性、动量、赛道景气 |
+| 防守 Agent | 巴菲特 | 回撤、波动、规模费率 |
+| 风控 Agent | 李录 | 最大风险、极端亏损 |
+| 周期 Agent | 芒格 | 行业格局、竞争态势 |
 
-1. **底层穿透防重叠**：同一行业仓位重合度不超过 15%
-2. **预算硬平衡**：定投金额不超过月净储蓄额
-3. **配置比例数学闭环**：筛选金额严格匹配配置比例
-4. **常识校验防幻觉**：PE/PB 极端值标注并交叉验证
-5. **财务健康预检**：先确认应急金、高息负债、保险
-6. **费率穿透**：每次推荐必须披露总费率结构
-7. **再平衡机制**：季度回顾，偏离 10% 触发再平衡
+### 调度流程
+
+```
+用户触发团队型 skill
+  → Team Lead 并行启动 4 个 Agent
+  → 各自独立 MCP 搜索 + 独立判断
+  → 4 视角结论汇总到 Team Lead
+  → 冲突检测（星级差 ≥2 或排名差 ≥3）
+  → 综合研判 → 生成报告
+  → 报告审计门（15% 抽样验证）
+```
+
+---
+
+## 工具层
+
+| 工具 | 用途 | 关键子命令 |
+|------|------|-----------|
+| `tools/financial_rigor.py` | Decimal 精度验算 | `verify-scale`, `verify-valuation`, `cross-validate`, `benford`, `calc`, `three-scenario` |
+| `tools/report_audit.py` | 报告质量门（15% 抽样）| `extract`, `verdict` |
+| `tools/data_validator.py` | 双源交叉验证 | `validate`, `batch` |
+| `tools/stock_screener.py` | L1 动量+L2 质量筛选 | `screen`, `grade` |
+| `tools/ashare_data.py` | A 股实时数据 MCP 封装 | `quote`, `financials`, `valuation`, `search` |
+
+---
+
+## 测试覆盖
+
+| 层级 | 测试数 | 状态 |
+|------|--------|------|
+| Agent 层 | 3 | ✅ 3/3 |
+| 工具层 | 10 | ✅ 10/10 |
+| 既有穿透+防护 | 31 | ✅ 31/31 |
+| **合计** | **44** | **✅ 全绿** |
+
+运行测试：
+
+```bash
+# Agent 层
+python .claude/skills/fund-selector/tests/agents/test_agents_v2.py
+
+# 工具层
+python .claude/skills/fund-selector/tests/tools/test_tools.py
+```
+
+---
 
 ## 数据源
 
-- **基金净值**：天天基金网（via AKShare）
-- **A 股行情**：AKShare
-- **宏观经济**：AKShare + FRED
-- **新闻搜索**：Tavily（可选）
+| 服务器 | 工具数 | 用途 |
+|--------|--------|------|
+| cn-financial | 42 | A 股行情/财报/宏观/行业 |
+| cn-mutual-fund | ~20 | 基金信息/净值/经理/持仓 |
+
+---
+
+## 约束（铁律）
+
+1. **穿透防重叠**：推荐组合前三基金行业重合度 ≤15%
+2. **预算硬平衡**：定投金额 ≤ 月净储蓄额
+3. **费率穿透**：每次推荐披露完整费率
+4. **常识校验**：PE/PB 异常值标注
+5. **财务预检**：无应急金/高息负债先劝阻
+6. **再平衡机制**：季度回顾 + 偏离 >10% 触发
+7. **数据双源**：关键数据点强制交叉验证
+8. **报告审计**：15% 随机抽样验证
+
+---
+
+## 目录结构
+
+```
+.claude/skills/fund-selector/
+├── SKILL.md                         # 主索引（路由表）
+├── ARCHITECTURE.md                  # 架构说明文档
+├── skills/                          # 19 个 skill 定义
+├── agents/                          # Agent 层（4 个脚本 + 测试）
+├── tools/                           # 工具层（5 个工具 + 测试）
+└── tests/                           # 测试（agents/ + tools/）
+```
+
+---
 
 ## 免责声明
 
-本项目仅供学习研究使用，所有数据和分析仅供参考，不构成任何投资建议。投资有风险，入市需谨慎。
+本项目仅供学习和研究目的，不构成任何投资建议。投资有风险，决策需谨慎。请始终做好自己的尽职调查（DYOR）。
+
+---
 
 ## License
 
-MIT
+MIT License
+
+---
+
+> "The best investment you can make is in yourself." — Warren Buffett
+>
+> Fund Selector：让每个人都拥有自己的基金投研团队。
