@@ -311,6 +311,23 @@ def generate_report(data: dict) -> str:
         lines.append(f"不可用指标：{', '.join(unavailable)}")
     lines.append("")
 
+    # 【移植 ai-berkberry 多 Agent】若存在多 Agent 综合分析则引入
+    synth_path = REPORTS_DIR / "_agent_synthesized.json"
+    if synth_path.exists():
+        try:
+            synth = json.loads(synth_path.read_text(encoding="utf-8"))
+            lines.append("【双 Agent 综合分析】（移植自 ai-berkshire）")
+            lines.append(f"  进攻 Agent 首推：{data.get('_offense_name', synth.get('offense_top', '?'))}")
+            lines.append(f"  防守 Agent 首推：{data.get('_defense_name', synth.get('defense_top', '?'))}")
+            conflicts = synth.get("conflicts", [])
+            if conflicts:
+                lines.append(f"  ⚠️ 视角冲突：{'; '.join(conflicts)}")
+            else:
+                lines.append("  ✅ 两视角无显著冲突")
+            lines.append("")
+        except Exception:
+            pass
+
     # 最终候选基金（合并 validated_funds + var_impacts + news）
     # step2 可能写入 "candidates" 或 "top10"
     candidates = data.get("candidates") or data.get("top10") or []
