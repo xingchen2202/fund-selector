@@ -88,6 +88,96 @@ def limit_candidates(candidates, max_count=3):
     return sorted_candidates[:max_count]
 
 
+# ---------------------------------------------------------------------------
+# 移植自 ai-berkshire: 信息丰富度分级 / 芒格反向测试 / 定投三情景
+# ---------------------------------------------------------------------------
+
+def grade_data_richness(fund_detail: dict) -> dict:
+    """信息丰富度分级 A/B/C（移植自 ai-berkshire）。
+
+    核心字段：规模 / 经理 / 净值指标（近1年收益、最大回撤）。
+    A=3源齐全，B=2源，C=1源及以下（应考虑剔除）。
+    """
+    core_checks = {
+        "规模": fund_detail.get("scale") is not None or fund_detail.get("actual_scale_wan") is not None,
+        "经理": bool(fund_detail.get("manager")),
+        "净值": (fund_detail.get("return_1y") is not None
+                 and fund_detail.get("max_drawdown") is not None),
+    }
+    present = sum(core_checks.values())
+
+    if present >= 3:
+        grade, verdict = "A", "多源可验证"
+    elif present == 2:
+        grade, verdict = "B", f"部分缺失（缺{[k for k,v in core_checks.items() if not v][0]}）"
+    else:
+        grade, verdict = "C", f"数据稀缺（仅{present}源），建议标注后谨慎评估"
+    return {"grade": grade, "present": present, "total": 3,
+            "checks": core_checks, "verdict": verdict}
+
+
+def build_reverse_test(c: dict, fund_detail: dict) -> str:
+    """芒格反向测试：如果这笔投资是错的，最可能的原因是什么？"""
+    risks = []
+    max_dd = fund_detail.get("max_drawdown")
+    if max_dd is not None and max_dd < -0.40:
+        risks.append(f"历史最大回撤 {max_dd:.0%}，极端行情下可能超限")
+    elif max_dd is not None and max_dd < -0.30:
+        risks.append(f"历史最大回撤 {max_dd:.0%}，需承受大幅波动")
+
+    age_years = fund_detail.get("age_years")
+    if age_years is not None and age_years < 3:
+        risks.append(f"成立仅 {age_years} 年，牛熊周期验证不足")
+
+    fee = fund_detail.get("fee_total") or fund_detail.get("fee")
+    if fee is not None and float(fee) > 2.0:
+        risks.append(f"总费率 {fee}% 偏高，长期侵蚀收益")
+
+    return "；".join(risks) if risks else "暂无明显风险点，但历史不代表未来"
+
+
+def build_dca_scenarios(c: dict, fund_detail: dict, monthly: float = None) -> str:
+    """定投三情景估值（移植自 ai-berkshire three-scenario）。
+
+    对 6 个月定投给出乐观/中性/悲观三种结果。
+    若 step0 提供 monthly_dca 则用申报额，否则回退近1年收益推算。
+    """
+    from decimal import Decimal, Context, ROUND_HALF_EVEN
+    _ctx = Context(prec=28, rounding=ROUND_HALF_EVEN)
+
+    # 定投金额：优先申报额，否则按评分前20%给 1500/月
+    if monthly is None or monthly <= 0:
+        monthly = 1500.0
+    m = Decimal(str(monthly))
+
+    # 三种年化情景（基于基金近1年收益做基准偏移）
+    base_ret = fund_detail.get("return_1y")
+    if isinstance(base_ret, (int, float)):
+        base_annual = float(base_ret) / 100.0
+    else:
+        base_annual = 0.05
+
+    scenarios = [
+        ("乐观", min(base_annual + 0.10, 0.30)),
+        ("中性", max(base_annual, 0.02)),
+        ("悲观", max(base_annual - 0.15, -0.20)),
+    ]
+
+    months = 6
+    parts = []
+    for label, annual in scenarios:
+        monthly_rate = (Decimal("1") + Decimal(str(annual))) ** (Decimal("1") / Decimal("12")) - Decimal("1")
+        balance = Decimal("0")
+        for _ in range(months):
+            balance = _ctx.add(balance, m)
+            balance = _ctx.multiply(balance, _ctx.add(Decimal("1"), monthly_rate))
+        principal = m * months
+        profit = float(balance) - float(principal)
+        pct = profit / float(principal) * 100
+        parts.append(f"{label}(年化{annual:+.0%})→{float(balance):.0f}元({pct:+.1f}%)")
+    return " / ".join(parts)
+
+
 def generate_report(data: dict) -> str:
     """生成报告文本"""
     now = datetime.now()
@@ -298,6 +388,9 @@ def generate_report(data: dict) -> str:
 
         lines.append(f"  {return_1y_label}：{return_1y_str} | {return_3y_label}：{return_3y_str} | 最大回撤：{max_dd_str}")
         lines.append(f"[分析层]")
+        # 移植 ai-berkshire: 信息丰富度分级
+        richness = grade_data_richness(fund_detail)
+        lines.append(f"  数据可信度：{richness['grade']} 级（{richness['present']}/{richness['total']} 源，{richness['verdict']}）")
         est_date = fund_detail.get("establishment_date")
         age_years = fund_detail.get("age_years")
         age_months = fund_detail.get("age_months")
@@ -305,6 +398,9 @@ def generate_report(data: dict) -> str:
         if est_date and age_years is not None:
             base_info += f" | 成立于{est_date}（{age_years}年{age_months}月）"
         lines.append(base_info)
+        # 移植 ai-berkshire: 芒格反向测试
+        lines.append(f"[反向测试]")
+        lines.append(f"  若判断错误，最可能原因：{build_reverse_test(c, fund_detail)}")
         lines.append(f"[VaR 影响]")
         # P8修复：使用 calc_var_impact.py 计算的 var_display（含真实波动率）
         var_display = var_info.get("var_display")
@@ -318,6 +414,10 @@ def generate_report(data: dict) -> str:
         bearish = news_info.get("bearish", "无")
         lines.append(f"  利多：{bullish}")
         lines.append(f"  利空：{bearish}")
+        # 移植 ai-berkshire: 定投三情景（6 个月 DCA）
+        monthly_dca = data.get("monthly_dca")
+        lines.append(f"[定投情景]（6 个月定投，月投 {monthly_dca or 1500:.0f} 元）")
+        lines.append(f"  {build_dca_scenarios(c, fund_detail, monthly=monthly_dca)}")
 
         if c.get("perilla"):
             lines.append(f"[紫苏叶视角]")

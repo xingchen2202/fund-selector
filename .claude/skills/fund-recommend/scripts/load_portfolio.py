@@ -63,12 +63,16 @@ def main():
     monthly_var = calc_var_estimate(holdings)
     var_budget = max(0, 2000 - monthly_var)
 
+    # 移植 ai-berkshire: 月定投金额（来自用户申报，默认 1500）
+    monthly_dca = portfolio.get("monthly_dca") or 1500
+
     result = {
         "total_value": round(total, 2),
         "sector_allocation": allocation,
         "overloaded_sectors": overloaded,
         "monthly_var_estimate": monthly_var,
         "var_budget_remaining": var_budget,
+        "monthly_dca": monthly_dca,
         "fund_count": len(holdings),
         "fund_codes": [h["code"] for h in holdings],
     }

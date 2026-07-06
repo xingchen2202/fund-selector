@@ -186,6 +186,91 @@ def test_news_level3_new_signature():
         "缺少百度新闻三级降级调用"
 
 
+# ---------------------------------------------------------------------------
+# G. 移植 ai-berkshire: 信息丰富度分级 / 反向测试 / 定投三情景
+# ---------------------------------------------------------------------------
+def _import_generate():
+    """动态导入 generate_recommend 模块。"""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("gen", str(SCRIPTS / "generate_recommend.py"))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_richness_grade_A():
+    """信息丰富度：3 源齐全 = A 级"""
+    g = _import_generate()
+    detail = {"scale": 4.42, "manager": "张三", "return_1y": 5.5, "max_drawdown": -0.20}
+    r = g.grade_data_richness(detail)
+    assert r["grade"] == "A"
+    assert r["present"] == 3
+
+
+def test_richness_grade_C():
+    """信息丰富度：仅 1 源 = C 级（应谨慎）"""
+    g = _import_generate()
+    detail = {"scale": 4.42}
+    r = g.grade_data_richness(detail)
+    assert r["grade"] == "C"
+    assert "数据稀缺" in r["verdict"]
+
+
+def test_richness_grade_B():
+    """信息丰富度：2 源 = B 级"""
+    g = _import_generate()
+    detail = {"scale": 4.42, "manager": "张三"}
+    r = g.grade_data_richness(detail)
+    assert r["grade"] == "B"
+
+
+def test_reverse_test_flags_high_drawdown():
+    """反向测试：回撤 > 40% 必须提示风险"""
+    g = _import_generate()
+    c = {"sector": "混合"}
+    detail = {"max_drawdown": -0.61, "age_years": 8, "fee_total": 1.5}
+    out = g.build_reverse_test(c, detail)
+    assert "回撤" in out and "61%" in out
+
+
+def test_reverse_test_flags_young_fund():
+    """反向测试：成立 <3 年必须提示验证不足"""
+    g = _import_generate()
+    c = {"sector": "混合"}
+    detail = {"max_drawdown": -0.15, "age_years": 2, "fee_total": 1.0}
+    out = g.build_reverse_test(c, detail)
+    assert "2 年" in out and "验证不足" in out
+
+
+def test_dca_scenarios_decimal_precision():
+    """定投三情景：Decimal 计算无浮点漂移，三情景结果不同"""
+    g = _import_generate()
+    c = {"sector": "混合"}
+    detail = {"return_1y": 0.05}
+    out = g.build_dca_scenarios(c, detail, monthly=1600)
+    # 必须包含三个情景标签
+    assert "乐观" in out and "中性" in out and "悲观" in out
+    # 乐观终值应高于悲观
+    import re
+    nums = re.findall(r"(\d+)元", out)
+    assert len(nums) == 3, f"应输出 3 个终值，实际: {out}"
+    assert int(nums[0]) > int(nums[2]), "乐观终值应高于悲观"
+
+
+def test_dca_uses_declared_monthly():
+    """定投情景应优先使用申报的月定投金额"""
+    g = _import_generate()
+    c = {"sector": "混合"}
+    detail = {"return_1y": 0.05}
+    out = g.build_dca_scenarios(c, detail, monthly=3000)
+    # 三情景基于月投3000计算：本金=3000*6=18000，终值应>18000(乐观)且<18000(悲观)
+    import re
+    nums = re.findall(r"(\d+)元", out)
+    assert len(nums) == 3
+    # 悲观情景终值应接近但低于 18000 本金
+    assert int(nums[2]) < 18000, f"月投3000的悲观终值应低于本金18000: {out}"
+
+
 def test_annualized():
     """区间年化：0.95 → 1.0553 / 180 天"""
     r = run_rigor("annualized", "--start-nav", "0.95", "--end-nav", "1.0553", "--days", "180")
