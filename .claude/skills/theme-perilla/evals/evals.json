@@ -1,0 +1,67 @@
+# Evals — 紫苏叶主题瓶颈分析
+
+> 测试 `/theme-perilla` skill 的文档完整性和功能正确性
+
+---
+
+```json
+{
+  "skill": "theme-perilla",
+  "version": "1.0.0",
+  "evals": [
+    {
+      "id": "E01-trigger-words",
+      "description": "SKILL.md 应包含触发词",
+      "assertions": [
+        {"type": "contains", "value": "紫苏叶分析"},
+        {"type": "contains", "value": "瓶颈节点"},
+        {"type": "contains", "value": "产业链"}
+      ]
+    },
+    {
+      "id": "E02-five-factors",
+      "description": "五因子模型应完整定义",
+      "assertions": [
+        {"type": "contains", "value": "细分市占率"},
+        {"type": "contains", "value": "毛利率"},
+        {"type": "contains", "value": "机构持仓"},
+        {"type": "contains", "value": "技术壁垒"},
+        {"type": "contains", "value": "产能约束"}
+      ]
+    },
+    {
+      "id": "E03-scoring-threshold",
+      "description": "评分阈值应正确",
+      "assertions": [
+        {"type": "contains", "value": "12/15"},
+        {"type": "contains", "value": "紫苏叶级"}
+      ]
+    },
+    {
+      "id": "E04-industry-chains",
+      "description": "产业链参考文件应存在",
+      "assertions": [
+        {"type": "file_exists", "value": "references/industry-chains/ai-computing.md"},
+        {"type": "file_exists", "value": "references/industry-chains/new-energy.md"},
+        {"type": "file_exists", "value": "references/industry-chains/semiconductor.md"}
+      ]
+    },
+    {
+      "id": "E05-perilla-scripts",
+      "description": "评分脚本应存在且可加载",
+      "assertions": [
+        {"type": "file_exists", "value": "scripts/perilla_scorer.py"},
+        {"type": "file_exists", "value": "scripts/industry_chain.py"}
+      ]
+    },
+    {
+      "id": "E06-output-format",
+      "description": "报告应包含紫苏叶评级输出",
+      "assertions": [
+        {"type": "contains", "value": "紫苏叶指数"},
+        {"type": "contains", "value": "瓶颈地图"}
+      ]
+    }
+  ]
+}
+```
