@@ -315,6 +315,16 @@ def generate_report(data: dict) -> str:
     # step2 可能写入 "candidates" 或 "top10"
     candidates = data.get("candidates") or data.get("top10") or []
     validated_funds = data.get("validated_funds", {})
+    validated_codes = {f.get("code") for f in validated_funds if isinstance(f, dict)}
+
+    # 【D2修复】只保留 step3 通过回撤过滤的基金
+    if validated_codes:
+        before = len(candidates)
+        candidates = [c for c in candidates if c.get("code") in validated_codes]
+        if len(candidates) < before:
+            print(f"[D2] step3回撤过滤剔除 {before - len(candidates)} 只: 仅保留validated_funds中的{len(validated_codes)}只",
+                  file=sys.stderr)
+
     var_impacts = data.get("var_impacts", {})
     news_data = data.get("news", {})
 
