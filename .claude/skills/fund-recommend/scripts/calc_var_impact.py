@@ -152,10 +152,10 @@ def main():
         print(json.dumps({"error": "step2 中无 candidates，请先运行 screen_candidates.py"}))
         sys.exit(1)
 
-    # 从 step3 获取净值序列 + 最大回撤
-    verified_funds = step3.get("verified", [])
+    # 从 step3 获取净值序列 + 最大回撤（D3修复：兼容 validated_funds / verified 两种字段名）
+    verified_funds = step3.get("validated_funds") or step3.get("verified") or []
     if isinstance(verified_funds, dict):
-        verified_funds = verified_funds.get("verified", [])
+        verified_funds = verified_funds.get("validated_funds") or verified_funds.get("verified") or []
 
     # 构建 code → {nav_series, max_drawdown, fund_type} 映射
     info_map = {}

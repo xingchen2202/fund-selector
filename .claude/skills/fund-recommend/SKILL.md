@@ -154,6 +154,10 @@ python ${CLAUDE_SKILL_DIR}\scripts\screen_candidates.py
   调用3：`get_fund_manager_info(fund_code=fund_code)`
     → 提取：经理姓名、任职年限
 
+  调用4：`get_fund_nav_history(fund_code=fund_code, period="6mo")` → nav_series（净值序列，至少20个点）
+    → **[D3 MUST]** 必须将完整净值序列写入 `_pipeline_step3.json` 的 `nav_series` 字段
+    → 无此字段则 Step 4 的真实 VaR 无法计算，回退到"数据不足"占位符
+
 ### 3.2 写入 pipeline
 
 [MUST] 完成以上调用后，Claude将所有基金的验证结果写入：
@@ -176,6 +180,7 @@ python ${CLAUDE_SKILL_DIR}\scripts\screen_candidates.py
         "return_3y_label": "近3年",
         "max_drawdown": -19.94,
         "inception_date": "2017-03-20",
+        "nav_series": [1.02, 1.05, 0.98, ...],
         "data_available": true
       }
     ],
