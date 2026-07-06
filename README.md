@@ -282,6 +282,43 @@ python .claude/skills/fund-selector/tests/tools/test_tools.py
 
 ---
 
+## 参考借鉴
+
+本项目在设计与实现过程中，参考并借鉴了以下开源项目与方法论：
+
+### 核心架构参考
+
+| 项目 | 借鉴内容 | 说明 |
+|------|---------|------|
+| [**ai-berkshire**](https://github.com/xbtlin/ai-berkshire) | 三层架构哲学 | Skill 层 / Agent 层 / Tool 层分层设计 |
+| **ai-berkshire** | 4 大师视角对抗分析 | 巴菲特/段永平/芒格/李录的独立分析视角 |
+| **ai-berkshire** | 信息丰富度分级（A/B/C）| 数据质量可信度评级机制 |
+| **ai-berkshire** | 快速否决清单 | 8 条红线一票否决机制 |
+| **ai-berkshire** | 三情景估值模型 | 乐观/中性/悲观估值方法 |
+| **ai-berkshire** | 供应链瓶颈猎手 | 产业链隐形冠军套利思路 |
+
+### 工具与机制参考
+
+| 借鉴来源 | 内容 | 本项目对应 |
+|---------|------|-----------|
+| **financial_rigor.py** (ai-berkshire) | Decimal 精确验算 | `tools/financial_rigor.py`（规模/估值/交叉验证/Benford/三情景）|
+| **investment-checklist** (ai-berkshire) | 6 关买入清单 | `skills/fund-checklist.md` |
+| **quality-screen** (ai-berkshire) | 7 条硬规则筛选 | `skills/quality-screen.md` |
+| **report_audit.py** (ai-berkshire) | 报告抽样审计 | `tools/report_audit.py` |
+| **thesis-tracker** (ai-berkshire) | 买入后追踪 | `skills/thesis-tracker.md` |
+| **news-pulse** (ai-berkshire) | 快讯归因架构 | `skills/news-pulse.md` |
+
+### 设计理念参考
+
+- **对抗式多视角**：不依赖单一分析视角，通过独立 Agent 的冲突暴露盲点
+- **数据双源验证**：关键数据点强制交叉验证，偏差 >1% 自动报警
+- **先破后立**：先排除坏选择（快否决），再精选好标的
+- **买入后纪律**：不止于推荐，更包含追踪与卖出机制
+
+> 感谢 [xbtlin/ai-berkshire](https://github.com/xbtlin/ai-berkshire) 提供的方法论与工具设计灵感。本项目在 ai-berkshire 三层架构基础上，针对 A 股公募基金场景做了深度适配与扩展。
+
+---
+
 ## 免责声明
 
 本项目仅供学习和研究目的，不构成任何投资建议。投资有风险，决策需谨慎。请始终做好自己的尽职调查（DYOR）。
