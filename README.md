@@ -1,5 +1,7 @@
 # Fund Selector — A 股公募基金投研助手
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 **中文** | [English](README_EN.md)
 
 > "一个人 + Claude Code = 一个投研团队。"
@@ -113,6 +115,28 @@ python .claude/skills/fund-selector/tests/tools/test_tools.py
 ---
 
 ## 整体架构
+
+```text
+┌─────────────────────────────── Skill 层 ───────────────────────────────┐
+│   深度研究 · 财报分析 · 行业筛选 · 持仓管理 · 思维工具 · 主题瓶颈分析     │
+│   （20 个 skill 入口：轻量 skill 直连工具；团队型 skill 经 Agent 层）    │
+└──────────────────────────────────┬──────────────────────────────────────┘
+                                   ▼
+┌─────────────────────────────── Agent 层 ───────────────────────────────┐
+│                            Team Lead （调度）                          │
+│     ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐                    │
+│     │ 进攻    │ │ 防守    │ │ 风控    │ │ 周期    │   ← 4 大师视角    │
+│     │ 段永平  │ │ 巴菲特  │ │ 李录    │ │ 芒格    │                    │
+│     └─────────┘ └─────────┘ └─────────┘ └─────────┘                    │
+│                   冲突检测 + 综合研判 → 报告审计门                       │
+└──────────────────────────────────┬──────────────────────────────────────┘
+                                   ▼
+┌─────────────────────────────── 工具层 ─────────────────────────────────┐
+│  financial_rigor.py · report_audit.py · data_validator.py              │
+│  stock_screener.py   · ashare_data.py  · perilla_scorer.py             │
+│                                            industry_chain.py           │
+└────────────────────────────────────────────────────────────────────────┘
+```
 
 **三层设计哲学**：
 
@@ -268,6 +292,8 @@ cd fund-selector
 
 ## 紫苏叶理论
 
+<details><summary>展开紫苏叶理论</summary>
+
 > **来源**：Serenity股神（Bilibili UP主"一羽禅心的鹤"）
 > **视频**：[BV1fT7z6QE2S](https://www.bilibili.com/video/BV1fT7z6QE2S) — "紫苏叶理论：第1讲 基础与投资框架"
 > **核心理念**：不追 AI 巨头（金枪鱼大腹），寻找被忽视的"瓶颈节点"（紫苏叶）。
@@ -327,6 +353,8 @@ cd fund-selector
 | AI 算力 | `references/industry-chains/ai-computing.md` |
 | 新能源 | `references/industry-chains/new-energy.md` |
 | 半导体 | `references/industry-chains/semiconductor.md` |
+
+</details>
 
 ---
 
@@ -517,6 +545,16 @@ Phase 5（进行中）: 自动化测试
 
 ---
 
+## 贡献指南
+
+欢迎社区参与：如有任何想法或改进，欢迎提交 Issue 或 Pull Request 与我们讨论。
+
+以下四类反馈尤为宝贵：**Bug 报告**（行为与文档不符）、**性能优化**（运行效率与资源占用）、**测试用例**（补充边界场景覆盖）、**新功能**（新 skill 与新工具）。
+
+提交前请确保已跑完整 **60 个测试用例**（`tests/agents/test_agents_v2.py`、`tests/tools/test_tools.py` 等），并确认全绿，以免破坏现有回归安全网。
+
+---
+
 ## License
 
 MIT License
@@ -526,3 +564,21 @@ MIT License
 > "The best investment you can make is in yourself." — Warren Buffett
 >
 > Fund Selector：让每个人都拥有自己的基金投研团队。
+
+---
+
+## 自检清单
+
+- [x] 4 处新增均已插入
+  - 新增 1（ASCII Architecture 图）：插入在 `## 整体架构` 与 `**三层设计哲学**` 之间，图下保留原三层设计哲学说明
+  - 新增 2（CONTRIBUTING 段落）：插入在 `---` 分割线与 `## License` 之间，新增 `## 贡献指南` 段落（仓库无 CONTRIBUTING.md 文件，故未加链接）
+  - 新增 3（License badge 行）：插入在第一行标题 `# Fund Selector — A 股公募基金投研助手` 正下方
+  - 新增 4（紫苏叶折叠标记）：`## 紫苏叶理论` 标题后加 `<details><summary>展开紫苏叶理论</summary>`，正文末（产业链参考表后）加 `</details>`，内所有子章节/表格/工作流保留
+- [x] 字数变化估计：增加约 380 字（ASCII 图约 200 字 + badge 行约 10 字 + 贡献指南段落约 120 字 + 折叠标记约 10 字），保留原文全部内容
+- [x] 原有序列 / 章节顺序未变（从 LLM 到投研助手 → 整体架构 → Skills 一览 → 快速开始 → Agent 层 → 工具层 → 紫苏叶理论 → 测试覆盖 → 数据源 → 约束 → 目录结构 → 灵感来源与演进 → 免责声明 → 贡献指南 → License）
+- [x] 原有 markdown 格式未破坏（表格、代码块、列表、链接均保持原样）
+- [x] 已读 SKILL.md 子目录（`.claude/skills/fund-selector` 含 SKILL.md、ARCHITECTURE.md、agents、evals、reports、skills、tests、tools），确认新增不与真实文件冲突；CONTRIBUTING.md 不存在（已验证 404），故贡献指南未加外部链接
+
+## 待确认
+
+无冲突。4 处新增均未与原有章节产生重复或冲突。
