@@ -1,6 +1,10 @@
 # Fund Selector — A 股公募基金投研助手
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![Version](https://img.shields.io/badge/version-v2.0-blue)
+![Tests](https://img.shields.io/badge/tests-60%2F60-brightgreen)
+![Platform](https://img.shields.io/badge/platform-Windows%20%2B%20Claude%20Code-lightgrey)
+![Python](https://img.shields.io/badge/python-3.8%2B-yellow)
 
 **中文** | [English](README_EN.md)
 
