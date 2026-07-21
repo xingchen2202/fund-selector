@@ -104,7 +104,7 @@ def main():
     parser.add_argument("--fcf-negative", action="store_true",
                         help="R2: 连续为负的自由现金流/持续亏损")
     parser.add_argument("--drawdown", type=float, default=None,
-                        help="R3: 成立以来最大回撤（负数，如 -0.61 表示 -61%）")
+                        help="R3: 成立以来最大回撤（负数，如 -0.61 表示 -61%%）")
     parser.add_argument("--erosion", action="store_true",
                         help="R4: 竞争优势被不可逆侵蚀")
     parser.add_argument("--relying-on-next-buyer", action="store_true",

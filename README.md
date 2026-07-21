@@ -12,7 +12,7 @@
 
 **Fund Selector v2.0** 是一套基于三层架构哲学的 A 股公募基金投研 Skill 合集，将价值投资的对抗式多视角方法论与 AI Agent 结合，覆盖深度研究、财报分析、行业筛选、持仓管理、思维工具五大场景。
 
-基于 Claude Code + MCP（cn-financial / cn-mutual-fund）实时数据，**60 个自动化测试全绿**，保证每份报告的数据严谨性可验证。
+基于 Claude Code + MCP（cn-financial / cn-mutual-fund）实时数据，**57 个自动化测试全绿**，保证每份报告的数据严谨性可验证。
 
 [从 LLM 到投研助手](#从-llm-到投研助手) · [Skills 一览（20 个）](#skills-一览20个) · [快速开始](#快速开始) · [架构设计](#架构设计) · [测试覆盖](#测试覆盖) · [紫苏叶理论](#紫苏叶理论)
 
@@ -108,12 +108,12 @@ python tools/financial_rigor.py verify-scale \
 
 **6. 用自动化测试，而非人工检查**
 
-60 个测试用例覆盖全链路，重构有安全网。
+57 个测试用例覆盖全链路，重构有安全网。
 
 ```bash
 python .claude/skills/fund-selector/tests/agents/test_agents_v2.py
 python .claude/skills/fund-selector/tests/tools/test_tools.py
-# 结果：60/60 全绿 ✅
+# 结果：57/57 全绿 ✅（含 fund-recommend 穿透+防护 37 个）
 ```
 
 ---
@@ -364,26 +364,49 @@ cd fund-selector
 
 ## 测试覆盖
 
-| 层级 | 测试数 | 状态 |
-|------|--------|------|
-| Agent 层 | 3 | ✅ 3/3 |
-| 工具层 | 10 | ✅ 10/10 |
-| 紫苏叶 | 16 | ✅ 16/16 |
-| 既有穿透+防护 | 31 | ✅ 31/31 |
-| **合计** | **60** | **✅ 全绿** |
+> 声明原则：下表仅统计**可本地复现**的自动化测试（`python <file>` 直接运行）。
+> 运行以下命令即可验证"全绿"声明；任何一行失败即表示声明不成立。
+
+### 行为测试（57/57 全绿）
+
+| 层级 | 测试数 | 状态 | 运行命令 |
+|------|--------|------|---------|
+| Agent 层 | 5 | ✅ 5/5 | `python .claude/skills/fund-selector/tests/agents/test_agents_v2.py` |
+| 工具层 | 10 | ✅ 10/10 | `python .claude/skills/fund-selector/tests/tools/test_tools.py` |
+| 端到端 e2e | 5 | ✅ 5/5 | `python .claude/skills/fund-selector/tests/test_e2e_pipeline.py` |
+| 既有穿透+防护 | 37 | ✅ 37/37 | 见下方 fund-recommend 两条 |
+| **合计** | **57** | **✅ 全绿** | — |
+
+### 结构校验（19/19 通过）
+
+| 层级 | 数量 | 说明 |
+|------|------|------|
+| Skill eval | 19 | 校验 19 个 skill 文档的结构完整性 + 工具引用可解析（非行为执行） |
+
+### 待补充
+
+| 层级 | 状态 | 说明 |
+|------|------|------|
+| 紫苏叶（theme-perilla）| ⚠️ 无自动化测试 | `perilla_scorer.py` / `industry_chain.py` 脚本可用，但尚未编写测试 |
 
 运行测试：
 
 ```bash
-# Agent 层
+# Agent 层（含 editor/reviewer smoke test）
 python .claude/skills/fund-selector/tests/agents/test_agents_v2.py
 
-# 工具层
+# 工具层（精度验算 / 双源审计 / 动量筛选 / 数据验证）
 python .claude/skills/fund-selector/tests/tools/test_tools.py
 
-# 紫苏叶
-python .claude/skills/theme-perilla/scripts/perilla_scorer.py --theme AI算力
-python .claude/skills/theme-perilla/scripts/industry_chain.py --theme AI算力
+# 端到端（Step0 组合约束 → Step3 验证 → 4 Agent 并行 → 综合器）
+python .claude/skills/fund-selector/tests/test_e2e_pipeline.py
+
+# 既有穿透+防护（移植 ai-berkshire 防偏差机制）
+python .claude/skills/fund-recommend/tests/test_ai_berkshire_port.py
+python .claude/skills/fund-recommend/tests/agents/test_agents.py
+
+# Skill 文档结构校验
+python .claude/skills/fund-selector/tests/evals/run_evals.py
 ```
 
 ---
@@ -529,7 +552,7 @@ Phase 4（已完成）: 紫苏叶穿透
   借鉴 Serenity股神瓶颈理论 → 创建紫苏叶指数 + 穿透分析
   
 Phase 5（进行中）: 自动化测试
-  60 个测试用例覆盖全链路
+  57 个测试用例覆盖全链路（详见「测试覆盖」章节）
 ```
 
 ### 致谢

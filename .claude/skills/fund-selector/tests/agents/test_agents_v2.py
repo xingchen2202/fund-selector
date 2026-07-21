@@ -119,6 +119,71 @@ def test_synthesizer_conflict_detection():
             if p.exists(): p.unlink()
 
 
+# ---------------------------------------------------------------------------
+# 编辑/审阅 Agent（prompt 生成器模式）— 回归测试
+# ---------------------------------------------------------------------------
+def _run_script(name, *args):
+    """运行 agents/ 下的脚本。"""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(name, str(AGT / f"{name}.py"))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.main
+
+
+def test_editor_agent_generates_prompt(tmp_path=None):
+    """编辑 Agent：输入初稿 → 输出含润色指令的 prompt 文件"""
+    editor = _import_agent("editor_agent")
+    import tempfile
+    tmpdir = tempfile.mkdtemp()
+    draft = Path(tmpdir) / "draft.md"
+    draft.write_text("# 初稿\n\n基金规模 4.42 亿元。\n", encoding="utf-8")
+    out = Path(tmpdir) / "polished.md"
+    # 直接调用 main 并注入参数
+    import argparse, contextlib
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        editor.main = None  # guard
+    # 通过 subprocess 方式调用更稳妥
+    import subprocess
+    r = subprocess.run([sys.executable, str(AGT / "editor_agent.py"),
+                        "--input", str(draft), "--output", str(out)],
+                       capture_output=True, text=True, encoding="utf-8", errors="replace")
+    assert r.returncode == 0, f"editor_agent 崩溃: {r.stderr[-200:]}"
+    assert out.exists(), "editor_agent 未生成输出文件"
+    content = out.read_text(encoding="utf-8")
+    assert "润色" in content, "输出应含润色指令"
+    assert "初稿" in content, "输出应嵌入初稿内容"
+    assert "4.42" in content, "输出应保留关键数据"
+
+
+def test_reviewer_agent_generates_prompt():
+    """审阅 Agent：输入文章 → 输出含审阅维度的 prompt 文件（.review.json）"""
+    import subprocess, tempfile
+    tmpdir = tempfile.mkdtemp()
+    article = Path(tmpdir) / "article.md"
+    article.write_text("# 测试文章\n\n基金近1年收益 62.03%。\n", encoding="utf-8")
+    r = subprocess.run([sys.executable, str(AGT / "reviewer_agent.py"),
+                        "--input", str(article)],
+                       capture_output=True, text=True, encoding="utf-8", errors="replace")
+    assert r.returncode == 0, f"reviewer_agent 崩溃: {r.stderr[-200:]}"
+    review = article.with_suffix(".review.json")
+    assert review.exists(), "reviewer_agent 未生成 .review.json"
+    content = review.read_text(encoding="utf-8")
+    assert "事实核查" in content, "输出应含事实核查维度"
+    assert "逻辑核查" in content, "输出应含逻辑核查维度"
+    assert "score" in content, "输出应要求评分"
+    assert "62.03%" in content, "输出应嵌入文章数据"
+
+
+def _import_agent(name):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(name, str(AGT / f"{name}.py"))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
 def main():
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     passed = failed = 0

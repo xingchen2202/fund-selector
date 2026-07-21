@@ -59,6 +59,17 @@ def verify_scale(nav, shares, reported_scale, unit="元"):
     s = exact(shares)
     r = exact(reported_scale)
     calculated = _CTX.multiply(n, s)
+    if r == 0:
+        print("=" * 60)
+        print("规模验算 (Scale Verification)")
+        print("=" * 60)
+        print(f"  单位净值 (NAV):     {n} {unit}")
+        print(f"  总份额 (Shares):    {fmt_number(s, '份')}")
+        print(f"  计算规模:           {fmt_number(calculated, '元')}")
+        print(f"  报告规模:           {fmt_number(r, unit)}")
+        print()
+        print("  ❌ 报告规模为零，无法验算偏差")
+        return False
     deviation = abs(float(calculated - r) / float(r)) * 100 if r != 0 else 0
     passed = deviation <= 5
 
@@ -128,6 +139,11 @@ def cross_validate(field_name, source_values: dict, unit="", tolerance_pct=2.0):
     print(f"  数据来源数: {len(values)}")
     print(f"  参考中位数: {fmt_number(exact(median))} {unit}")
     print()
+
+    # 双零 = 无有效数据，无法验证（与 data_validator 行为一致）
+    if all(v == 0 for v in nums):
+        print(f"  ⚠️  所有来源均为 0，无法验证一致性")
+        return {"consensus": 0, "all_consistent": None, "status": "无法验证"}
 
     all_ok = True
     for src, val in values.items():

@@ -38,6 +38,12 @@ def test_step0_portfolio():
 def test_step2_screen():
     """Step 2: 候选池筛选（使用旧架构脚本，新架构由 Claude 执行）."""
     script = REPO / ".claude/skills/fund-recommend/scripts/screen_candidates.py"
+    # screen_candidates.py 依赖 pandas；未安装时优雅跳过而非崩溃
+    try:
+        import pandas  # noqa: F401
+    except ImportError:
+        print("  ⚠️ Step 2 跳过：未安装 pandas（pip install pandas）")
+        return
     r = run(["py", str(script)])
     assert r.returncode == 0, f"screen_candidates failed: {r.stderr[-200:]}"
     d = json.loads((REPORTS / "_pipeline_step2.json").read_text(encoding="utf-8"))
