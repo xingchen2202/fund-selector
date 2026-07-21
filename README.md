@@ -12,7 +12,7 @@
 
 **Fund Selector v2.0** 是一套基于三层架构哲学的 A 股公募基金投研 Skill 合集，将价值投资的对抗式多视角方法论与 AI Agent 结合，覆盖深度研究、财报分析、行业筛选、持仓管理、思维工具五大场景。
 
-基于 Claude Code + MCP（cn-financial / cn-mutual-fund）实时数据，**57 个自动化测试全绿**，保证每份报告的数据严谨性可验证。
+基于 Claude Code + MCP（cn-financial / cn-mutual-fund）实时数据，**64 个自动化测试全绿**，保证每份报告的数据严谨性可验证。
 
 [从 LLM 到投研助手](#从-llm-到投研助手) · [Skills 一览（20 个）](#skills-一览20个) · [快速开始](#快速开始) · [架构设计](#架构设计) · [测试覆盖](#测试覆盖) · [紫苏叶理论](#紫苏叶理论)
 
@@ -108,12 +108,12 @@ python tools/financial_rigor.py verify-scale \
 
 **6. 用自动化测试，而非人工检查**
 
-57 个测试用例覆盖全链路，重构有安全网。
+64 个测试用例覆盖全链路，重构有安全网。
 
 ```bash
 python .claude/skills/fund-selector/tests/agents/test_agents_v2.py
 python .claude/skills/fund-selector/tests/tools/test_tools.py
-# 结果：57/57 全绿 ✅（含 fund-recommend 穿透+防护 37 个）
+# 结果：64/64 全绿 ✅（含约束校验 6 个 + 穿透+防护 37 个）
 ```
 
 ---
@@ -285,9 +285,10 @@ cd fund-selector
 | 工具 | 用途 | 关键子命令 |
 |------|------|-----------|
 | `tools/financial_rigor.py` | Decimal 精度验算 | `verify-scale`, `verify-valuation`, `cross-validate`, `benford`, `calc`, `three-scenario` |
-| `tools/report_audit.py` | 报告质量门（15% 抽样）| `extract`, `verdict` |
+| `tools/report_audit.py` | 双源审计门（1% 容差 + 降级警告 + CI 退出码）| `extract`, `verdict` |
 | `tools/data_validator.py` | 双源交叉验证 | `validate`, `batch` |
 | `tools/stock_screener.py` | L1 动量+L2 质量筛选 | `screen`, `grade` |
+| `tools/constraint_validator.py` | **8 条铁律程序化校验** | `validate_constraints` |
 | `tools/ashare_data.py` | A 股实时数据 MCP 封装 | `quote`, `financials`, `valuation`, `search` |
 | `tools/perilla_scorer.py` | 紫苏叶五因子瓶颈评分 | `--theme`, `--output` |
 | `tools/industry_chain.py` | 产业链图谱构建 | `--theme`, `--output` |
@@ -371,11 +372,11 @@ cd fund-selector
 
 | 层级 | 测试数 | 状态 | 运行命令 |
 |------|--------|------|---------|
-| Agent 层 | 5 | ✅ 5/5 | `python .claude/skills/fund-selector/tests/agents/test_agents_v2.py` |
-| 工具层 | 10 | ✅ 10/10 | `python .claude/skills/fund-selector/tests/tools/test_tools.py` |
+| Agent 层 | 6 | ✅ 6/6 | `python .claude/skills/fund-selector/tests/agents/test_agents_v2.py` |
+| 工具层 | 16 | ✅ 16/16 | `python .claude/skills/fund-selector/tests/tools/test_tools.py` + `test_constraint_validator.py` |
 | 端到端 e2e | 5 | ✅ 5/5 | `python .claude/skills/fund-selector/tests/test_e2e_pipeline.py` |
 | 既有穿透+防护 | 37 | ✅ 37/37 | 见下方 fund-recommend 两条 |
-| **合计** | **57** | **✅ 全绿** | — |
+| **合计** | **64** | **✅ 全绿** | — |
 
 ### 结构校验（19/19 通过）
 
@@ -552,7 +553,7 @@ Phase 4（已完成）: 紫苏叶穿透
   借鉴 Serenity股神瓶颈理论 → 创建紫苏叶指数 + 穿透分析
   
 Phase 5（进行中）: 自动化测试
-  57 个测试用例覆盖全链路（详见「测试覆盖」章节）
+  64 个测试用例覆盖全链路（详见「测试覆盖」章节）
 ```
 
 ### 致谢

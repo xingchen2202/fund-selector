@@ -119,6 +119,53 @@ def test_synthesizer_conflict_detection():
             if p.exists(): p.unlink()
 
 
+def test_synthesizer_risk_veto():
+    """综合器（新增）：任一视角 1 星 → 直接否决，不再首推。
+
+    场景：成长5星 + 风险1星("无法承受最大亏损") + 价值4星 + 周期3星
+    旧行为：平均 3.2 星，仍首推（风险被稀释）❌
+    新行为：top_pick 应为 None，标注被否决 ✅
+    """
+    outputs = REPORTS / "_agent_outputs"
+    outputs.mkdir(exist_ok=True)
+    (outputs / "value.json").write_text(json.dumps({
+        "agent": "value",
+        "rankings": [{"code": "Y", "name": "高风险基金", "stars": 4, "reason": "规模大，费率低"}]
+    }), encoding="utf-8")
+    (outputs / "growth.json").write_text(json.dumps({
+        "agent": "growth",
+        "rankings": [{"code": "Y", "name": "高风险基金", "stars": 5, "reason": "赛道景气，动量强"}]
+    }), encoding="utf-8")
+    (outputs / "risk.json").write_text(json.dumps({
+        "agent": "risk",
+        "rankings": [{"code": "Y", "name": "高风险基金", "stars": 1, "reason": "无法承受最大亏损"}]
+    }), encoding="utf-8")
+    (outputs / "cycle.json").write_text(json.dumps({
+        "agent": "cycle",
+        "rankings": [{"code": "Y", "name": "高风险基金", "stars": 3, "reason": "周期顶部"}]
+    }), encoding="utf-8")
+    try:
+        sys.path.insert(0, str(AGT))
+        # 强制重新加载模块以拾取最新代码
+        import importlib
+        import synthesize as synth_mod
+        importlib.reload(synth_mod)
+        import contextlib
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            synth_mod.main()
+        result = json.loads((REPORTS / "_agent_synthesized.json").read_text(encoding="utf-8"))
+        y = next(r for r in result["final_rankings"] if r["code"] == "Y")
+        # 核心断言：1 星风险应触发否决
+        assert y.get("vetoed") is True, f"Y 应被否决: {y}"
+        assert result["top_pick"] is None, f"被否决基金不应被首推，实际 top_pick={result['top_pick']}"
+        assert len(result.get("vetoes", [])) >= 1, "应有否决记录"
+    finally:
+        for f in ["value", "growth", "risk", "cycle"]:
+            p = outputs / f"{f}.json"
+            if p.exists(): p.unlink()
+
+
 # ---------------------------------------------------------------------------
 # 编辑/审阅 Agent（prompt 生成器模式）— 回归测试
 # ---------------------------------------------------------------------------

@@ -105,6 +105,11 @@ def verify_valuation(price, eps=None, bps=None, dividend=None):
             pe = _CTX.divide(p, e)
             print(f"  PE (TTM):  {p} / {e} = {float(pe):.2f}x")
             results["PE"] = float(pe)
+            # 负 PE 警告：企业亏损，PE 无意义
+            if float(pe) < 0:
+                print(f"  ⚠️  负 PE：企业亏损，PE 指标无意义，建议改用 PS 或 PB")
+        else:
+            print(f"  PE (TTM):  EPS 为零，无法计算")
 
     if bps is not None:
         b = exact(bps)
@@ -112,6 +117,11 @@ def verify_valuation(price, eps=None, bps=None, dividend=None):
             pb = _CTX.divide(p, b)
             print(f"  PB:        {p} / {b} = {float(pb):.2f}x")
             results["PB"] = float(pb)
+            # 负 PB 警告：资不抵债
+            if float(pb) < 0:
+                print(f"  ⚠️  负 PB：净资产为负，企业资不抵债")
+        else:
+            print(f"  PB:  BPS 为零，无法计算")
 
     if dividend is not None:
         d = exact(dividend)
@@ -139,6 +149,11 @@ def cross_validate(field_name, source_values: dict, unit="", tolerance_pct=2.0):
     print(f"  数据来源数: {len(values)}")
     print(f"  参考中位数: {fmt_number(exact(median))} {unit}")
     print()
+
+    # 单源 = 无法交叉验证
+    if len(values) == 1:
+        print(f"  ⚠️  仅 1 个数据来源，无法交叉验证（需 ≥2 源）")
+        return {"consensus": median, "all_consistent": None, "status": "单源无法验证"}
 
     # 双零 = 无有效数据，无法验证（与 data_validator 行为一致）
     if all(v == 0 for v in nums):

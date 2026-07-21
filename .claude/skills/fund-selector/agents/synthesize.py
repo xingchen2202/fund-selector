@@ -63,9 +63,10 @@ def main():
                 "reason": r.get("reason", ""),
             }
 
-    # 综合打分（平均星级）
+    # 综合打分（平均星级 + 风险否决机制）
     merged = []
     conflicts = []
+    vetoes = []  # 新增：风险否决列表
     for code in all_codes:
         agent_ranks = rankings.get(code, {})
         stars_list = [v["stars"] for v in agent_ranks.values() if v.get("stars")]
@@ -74,6 +75,16 @@ def main():
         # 冲突检测：星级差 >= 2
         if stars_list and max(stars_list) - min(stars_list) >= 2:
             conflicts.append(f"{code}：最高{max(stars_list)}星 vs 最低{min(stars_list)}星，视角分歧大")
+
+        # 新增：风险否决 — 任一视角 1 星（尤其风控/合规）→ 直接否决
+        vetoed = False
+        veto_reasons = []
+        for agent_name, rank_info in agent_ranks.items():
+            s = rank_info.get("stars", 5)
+            reason = rank_info.get("reason", "")
+            if s <= 1:
+                vetoed = True
+                veto_reasons.append(f"{agent_name} {s}星（{reason}）")
 
         # 找 name
         name = ""
@@ -89,17 +100,36 @@ def main():
             "avg_stars": round(avg_stars, 1),
             "agent_ranks": agent_ranks,
             "conflict": max(stars_list) - min(stars_list) >= 2 if stars_list else False,
+            "vetoed": vetoed,
+            "veto_reasons": veto_reasons,
         })
 
+        if vetoed:
+            vetoes.append(f"{code}（{name}）：被否决 — {'; '.join(veto_reasons)}")
+
     merged.sort(key=lambda x: x["avg_stars"], reverse=True)
-    top = merged[0] if merged else {}
+
+    # 首推：优先选择未被否决的最高分；若全部被否决则标注"无推荐"
+    top = {}
+    for m in merged:
+        if not m.get("vetoed"):
+            top = m
+            break
+    if not top and merged:
+        top = merged[0]  # 全部被否决时取最高分但标注
 
     output = {
         "final_rankings": merged,
         "conflicts": conflicts,
-        "top_pick": top.get("code"),
+        "vetoes": vetoes,
+        "top_pick": top.get("code") if not top.get("vetoed") else None,
         "top_avg_stars": top.get("avg_stars"),
-        "consensus": f"综合首推 {top.get('name','?')}（{top.get('avg_stars',0)} 星），{len(conflicts)} 个视角冲突",
+        "top_vetoed": top.get("vetoed", False),
+        "consensus": (
+            f"综合首推 {top.get('name','?')}（{top.get('avg_stars',0)} 星），{len(conflicts)} 个视角冲突"
+            if not top.get("vetoed")
+            else f"⚠️ 所有候选均被风险否决，最高分为 {top.get('name','?')}（{top.get('avg_stars',0)} 星，已被否决）"
+        ),
     }
 
     out_path = REPORTS_DIR / "_agent_synthesized.json"

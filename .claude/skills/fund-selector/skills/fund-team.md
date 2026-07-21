@@ -1,6 +1,6 @@
 # /fund-team — 多 Agent 投研团队（团队型）
 
-> **架构**：Team Lead 并行调度 4 大师视角 Agent → 各自独立分析 → 冲突检测 → 综合研判
+> **架构**：Team Lead 调度 4 大师视角分析（文档驱动模式）→ 各自独立分析 → 冲突检测 + 风险否决 → 综合研判
 
 ## 触发
 "多角度分析"、"投研团队"、"深度覆盖"、"用投资大师视角看"
@@ -8,7 +8,7 @@
 ## Team Lead 职责
 1. 读取 `_pipeline_step3.json` 获取候选基金
 2. 生成 4 个视角 prompt（`agents/team_lead.py`）
-3. 并行调度 Claude 执行 4 个视角分析
+3. 调度 Claude 执行 4 个视角分析（文档驱动：生成 4 个 prompt 文件，Claude 逐一独立分析）
 4. 汇总冲突，综合研判
 
 ## 流程
@@ -16,7 +16,7 @@
 ### Team Lead 调度流程
 1. 读取 `_pipeline_step3.json` 获取候选基金
 2. 生成 4 个视角 prompt（`agents/team_lead.py`）
-3. 并行调度 Claude 执行 4 个视角分析
+3. 调度 Claude 执行 4 个视角分析（文档驱动：生成 4 个 prompt 文件，Claude 逐一独立分析）
 4. 汇总冲突，综合研判
 
 ### 4 大师视角分析框架

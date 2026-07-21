@@ -4,7 +4,7 @@
 
 **Fund Selector v2.0** is a Claude Code Skill collection for researching mainland China mutual funds (A-share 公募基金). Built on a three-layer architecture philosophy, it combines adversarial multi-perspective value investing methodology with AI agents, spanning deep research, earnings analysis, industry screening, portfolio management, and thinking tools.
 
-Powered by Claude Code + MCP (cn-financial / cn-mutual-fund) real-time data, with **57 automated tests passing** — ensuring every report's data rigor is verifiable.
+Powered by Claude Code + MCP (cn-financial / cn-mutual-fund) real-time data, with **64 automated tests passing** — ensuring every report's data rigor is verifiable.
 
 [Why not just ask AI?](#why-not-just-ask-ai) · [Skills Overview (20)](#skills-overview-20) · [Quick Start](#quick-start) · [Architecture](#architecture) · [Test Coverage](#test-coverag
 
@@ -99,12 +99,12 @@ A normal LLM outputs different formats each run. We ensure: **same input → str
 
 **6. Automated tests, not manual checking**
 
-57 test cases cover the full pipeline — refactoring has a safety net.
+64 test cases cover the full pipeline — refactoring has a safety net.
 
 ```bash
 python .claude/skills/fund-selector/tests/agents/test_agents_v2.py
 python .claude/skills/fund-selector/tests/tools/test_tools.py
-# Result: 57/57 green
+# Result: 64/64 green
 ```
 
 ---
@@ -433,7 +433,7 @@ Phase 4 (Complete): Perilla penetration
   Borrow Serenity perilla bottleneck theory → create Perilla Index + penetration analysis
   
 Phase 5 (In Progress): Automated testing
-  57 test cases cover full pipeline (see "Test Coverage" section)
+  64 test cases cover full pipeline (see "Test Coverage" section)
 ```
 
 ### Acknowledgments

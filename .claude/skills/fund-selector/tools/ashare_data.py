@@ -47,15 +47,22 @@ def main():
 
     args = parser.parse_args()
 
-    calls = {
-        "quote": ("get_realtime_quote", {"symbol": args.code}),
-        "financials": ("get_financial_indicators", {"symbol": args.code}),
-        "valuation": ("get_valuation_metrics", {"symbol": args.code, "num_periods": 60}),
-        "search": ("search_stock", {"keyword": args.keyword}),
-    }
+    # 惰性求值：避免构建字典时引用尚未解析的子命令参数（如 args.keyword）
+    def _build_call(cmd):
+        if cmd == "quote":
+            return "get_realtime_quote", {"symbol": args.code}
+        elif cmd == "financials":
+            return "get_financial_indicators", {"symbol": args.code}
+        elif cmd == "valuation":
+            return "get_valuation_metrics", {"symbol": args.code, "num_periods": 60}
+        elif cmd == "search":
+            return "search_stock", {"keyword": args.keyword}
+        return None
 
-    if args.command in calls:
-        tool, params = calls[args.command]
+    tool_params = _build_call(args.command) if args.command else None
+
+    if tool_params:
+        tool, params = tool_params
         call_str = make_mcp_call(tool, params)
         print(f"请执行以下 MCP 调用获取数据：\n")
         print(f"  {call_str}\n")

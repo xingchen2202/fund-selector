@@ -118,13 +118,13 @@ def main():
         {
             "filename": "value_prompt.txt",
             "agent": "Buffett",
-            "perspective": "Value Investing (Financial Quality + Margin of Safety)",
-            "philosophy": "Buy wonderful companies at fair prices. Focus: large scale (>10B), low fees (<1.5%), stable manager (>3+ years), controllable drawdown (<30%), consistent benchmark outperformance.",
-            "questions": """1. Financial quality: Is the scale large enough? Are fees low enough? Is the manager stable?
-2. Margin of safety: Where does the current NAV rank in 1/3 year history?
-3. Moat: Is the fund manager's alpha sustainable?
-4. Rate 1-5 stars + reasoning (2-3 sentences, cite specific data)
-5. Would you own this fund?""",
+            "perspective": "Value Investing (Business Quality + Margin of Safety)",
+            "philosophy": "Buy wonderful companies at fair prices. Focus on the FUNDAMENTAL QUALITY of the fund's underlying holdings: wide moat (brand/switching cost/scale), durable competitive advantage, high ROE (>15%), strong free cash flow, low debt. The fund is only as good as the businesses it owns — penetrate to the holdings and assess business quality.",
+            "questions": """1. Business quality: Penetrate to the top holdings — do they have wide moats? High ROE? Strong free cash flow? Sustainable competitive advantage?
+2. Margin of safety: Is the fund's holdings collectively priced at a discount to intrinsic value? Where does the current NAV rank in 1/3 year history?
+3. Management quality: Does the fund manager demonstrate capital allocation discipline? Low turnover? Long-term orientation? No style drift?
+4. Rate 1-5 stars + reasoning (2-3 sentences, cite specific data like "top holding ROE 22%", "avg debt ratio 35%")
+5. Would you own this portfolio of businesses at the current price?""",
         },
         {
             "filename": "growth_prompt.txt",
