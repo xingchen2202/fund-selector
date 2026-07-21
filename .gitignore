@@ -71,3 +71,14 @@ generate_corrected_excel.py
 
 # 一次性审计报告（已过时）
 .claude/skills/fund-selector/reports/SKILL_AUDIT_REPORT.md
+
+# 嵌套 git 仓库 / 外部依赖（本地运行需要，但不并入本仓库）
+FinanceAgent/
+ai-berkshire/
+cn-financial-mcp/
+cn-financial-services-plugins/
+cn-mutual-fund/
+
+# 本地配置与迭代工作目录
+config/
+iteration-3/
