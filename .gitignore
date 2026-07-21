@@ -40,3 +40,34 @@ desktop.ini
 
 # 日志文件
 *.log
+
+# screenpipe / 屏幕录制调试输出
+_screen_*
+screen_*.txt
+screen_*.json
+
+# Windows 设备名误生成的文件
+nul
+con
+prn
+aux
+
+# 个人工作笔记（本地开发用，不上传）
+.planning/
+task_plan.md
+progress.md
+findings.md
+skill-design-brief.md
+
+# 个人独立脚本（非 skill 部分）
+fund_selector.py
+weekly_report.py
+import_alipay.py
+generate_corrected_excel.py
+
+# 旧版备份
+.claude/skills/fund-recommend/iteration-2-backup/
+.claude/skills/fund-recommend/iteration-3-backup/
+
+# 一次性审计报告（已过时）
+.claude/skills/fund-selector/reports/SKILL_AUDIT_REPORT.md
