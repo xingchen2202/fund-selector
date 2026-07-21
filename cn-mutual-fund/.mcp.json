@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "cn-mutual-fund": {
+      "type": "stdio",
+      "command": "py",
+      "args": ["-m", "cn_mutual_fund"],
+      "cwd": "cn-mutual-fund/src"
+    }
+  }
+}

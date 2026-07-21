@@ -14,13 +14,13 @@
     },
     "cn-financial": {
       "type": "stdio",
-      "command": "python",
+      "command": "py",
       "args": ["-m", "cn_financial_mcp"],
       "cwd": "C:\\Users\\22218\\Desktop\\fund-selector\\cn-financial-mcp\\src"
     },
     "cn-mutual-fund": {
       "type": "stdio",
-      "command": "python",
+      "command": "py",
       "args": ["-m", "cn_mutual_fund"],
       "cwd": "C:\\Users\\22218\\Desktop\\fund-selector\\cn-mutual-fund\\src"
     }
