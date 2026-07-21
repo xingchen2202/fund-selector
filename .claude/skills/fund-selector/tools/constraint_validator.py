@@ -63,7 +63,7 @@ def validate_constraints(rec: dict) -> dict:
     _check_industry_overlap(rec, failures)
 
     # 约束二：预算硬平衡
-    _check_budget_balance(rec, failures)
+    _check_budget_balance(rec, failures, warnings)
 
     # 约束三：配置比例闭环
     _check_allocation_closed_loop(rec, failures)
@@ -110,11 +110,10 @@ def _check_industry_overlap(rec: dict, failures: list):
                     )
 
 
-def _check_budget_balance(rec: dict, failures: list):
+def _check_budget_balance(rec: dict, failures: list, warnings: list):
     """约束二：定投金额 ≤ 月净储蓄额。"""
     monthly = rec.get("monthly_savings", 0)
     if monthly <= 0:
-        warnings = []  # noqa: F841
         return
 
     for f in rec.get("funds", []):
@@ -132,7 +131,12 @@ def _check_budget_balance(rec: dict, failures: list):
                         f"[预算硬平衡] {f.get('name','?')} 定投 ¥{amount}/月 "
                         f"> 月净储蓄 ¥{monthly}，且存量现金流不足以支撑加倍定投"
                     )
-                # 否则为警告（有超额来源但需标注）
+                else:
+                    # 存量现金流足够，但须标注超额来源（按 CLAUDE.md 约束二）
+                    warnings.append(
+                        f"[预算硬平衡] {f.get('name','?')} 加倍定投 ¥{amount}/月，"
+                        f"超额 ¥{excess}/月从存量现金流划拨，当前存量 ¥{idle_cash:,.0f} 可支撑 {months} 个月"
+                    )
             else:
                 failures.append(
                     f"[预算硬平衡] {f.get('name','?')} 定投 ¥{amount}/月 "
