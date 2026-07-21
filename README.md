@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ![Version](https://img.shields.io/badge/version-v2.0-blue)
-![Tests](https://img.shields.io/badge/tests-60%2F60-brightgreen)
+![Tests](https://img.shields.io/badge/tests-57%2F57-brightgreen)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%2B%20Claude%20Code-lightgrey)
 ![Python](https://img.shields.io/badge/python-3.8%2B-yellow)
 
@@ -578,7 +578,7 @@ Phase 5（进行中）: 自动化测试
 
 以下四类反馈尤为宝贵：**Bug 报告**（行为与文档不符）、**性能优化**（运行效率与资源占用）、**测试用例**（补充边界场景覆盖）、**新功能**（新 skill 与新工具）。
 
-提交前请确保已跑完整 **60 个测试用例**（`tests/agents/test_agents_v2.py`、`tests/tools/test_tools.py` 等），并确认全绿，以免破坏现有回归安全网。
+提交前请确保已跑完整 **57 个测试用例**（`tests/agents/test_agents_v2.py`、`tests/tools/test_tools.py` 等），并确认全绿，以免破坏现有回归安全网。
 
 ---
 
