@@ -109,26 +109,35 @@ def main():
 
     merged.sort(key=lambda x: x["avg_stars"], reverse=True)
 
-    # 首推：优先选择未被否决的最高分；若全部被否决则标注"无推荐"
+    # 首推：优先选择未被否决的最高分
     top = {}
     for m in merged:
         if not m.get("vetoed"):
             top = m
             break
+
+    # 否决后备选：若全部被否决，返回最接近合规的候选（最高分但标注风险）
+    fallback = None
     if not top and merged:
-        top = merged[0]  # 全部被否决时取最高分但标注
+        fallback = {
+            "code": merged[0].get("code"),
+            "name": merged[0].get("name"),
+            "avg_stars": merged[0].get("avg_stars"),
+            "note": "虽未达最优且被否决，但为当前最高分候选，建议谨慎考虑或扩大筛选范围"
+        }
 
     output = {
         "final_rankings": merged,
         "conflicts": conflicts,
         "vetoes": vetoes,
-        "top_pick": top.get("code") if not top.get("vetoed") else None,
-        "top_avg_stars": top.get("avg_stars"),
-        "top_vetoed": top.get("vetoed", False),
+        "top_pick": top.get("code") if top else None,
+        "top_avg_stars": top.get("avg_stars") if top else None,
+        "top_vetoed": False if top else True,
+        "fallback_candidate": fallback,  # 新增：否决后备选
         "consensus": (
             f"综合首推 {top.get('name','?')}（{top.get('avg_stars',0)} 星），{len(conflicts)} 个视角冲突"
-            if not top.get("vetoed")
-            else f"⚠️ 所有候选均被风险否决，最高分为 {top.get('name','?')}（{top.get('avg_stars',0)} 星，已被否决）"
+            if top
+            else f"⚠️ 所有候选均被风险否决，建议扩大筛选范围或调整风险偏好"
         ),
     }
 

@@ -97,10 +97,47 @@ effort: high
 | 工具 | 用途 | 关键子命令 |
 |------|------|-----------|
 | `tools/financial_rigor.py` | Decimal 精度验算 | `verify-scale`, `verify-valuation`, `cross-validate`, `benford`, `calc`, `three-scenario` |
-| `tools/report_audit.py` | 报告质量门 | `extract`, `verdict` |
+| `tools/report_audit.py` | 双源审计门（1% 容差 + 降级警告 + CI 退出码） | `extract`, `verdict` |
 | `tools/data_validator.py` | 双源交叉验证 | `validate`, `flag-deviation` |
 | `tools/stock_screener.py` | 动量+质量筛选 | `screen`, `grade` |
 | `tools/ashare_data.py` | A 股实时数据 | `quote`, `financials`, `valuation`, `search` |
+| `tools/constraint_validator.py` | **8 条铁律程序化校验** | `validate_constraints` |
+
+---
+
+## 强制约束校验（不可跳过）
+
+> 每次生成推荐组合后，**必须**调用 `constraint_validator.validate_constraints()` 对推荐结果执行 8 条铁律校验。
+> 不通过则必须修正后重新校验，直至通过方可输出。
+
+**执行流程**：
+1. 生成推荐组合（含代码、名称、行业配置、费率、金额）
+2. 构造 recommendation 字典（参见 `constraint_validator.py` 的 `validate_constraints` 函数文档）
+3. 调用 `validate_constraints(recommendation)`
+4. 若 `passed=False` → 根据 `failures` 和 `suggestions` 修正推荐 → 重新校验
+5. 若 `passed=True` → 输出推荐（附注校验结果）
+
+**输入字段**：
+```python
+{
+  "funds": [{"code": "110011", "name": "...", "industry_alloc": {"制造业": 30}, "fee_total": 1.5, "amount": 2000, "is_dca": True}],
+  "monthly_savings": 3000,           # 月净储蓄额
+  "total_investment": 50000,         # 总资金
+  "target_allocation": {"stock": 0.7, "bond": 0.2, "cash": 0.1},
+  "actual_allocation": {"stock": 0.7, "bond": 0.2, "cash": 0.1},
+  "valuation_percentile": 0.25,     # 当前估值分位
+  "has_emergency_fund": True,
+  "has_high_interest_debt": False,
+  "has_insurance": True,
+  "rebalancing_rule": "季度回顾，偏离>10%触发",
+  "disclaimers": ["不构成投资建议"]
+}
+```
+
+**返回**：
+```python
+{"passed": bool, "failures": [...], "warnings": [...], "suggestions": [...]}
+```
 
 ---
 

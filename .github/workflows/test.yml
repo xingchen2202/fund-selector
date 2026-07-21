@@ -1,0 +1,63 @@
+name: Fund Selector Tests
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run tool tests
+        run: python .claude/skills/fund-selector/tests/tools/test_tools.py
+
+      - name: Run constraint validator tests
+        run: python .claude/skills/fund-selector/tools/test_constraint_validator.py
+
+      - name: Run constraint validator deep tests
+        run: python .claude/skills/fund-selector/tools/test_constraint_validator_deep.py
+
+      - name: Run MCP integration tests
+        run: python .claude/skills/fund-selector/tools/test_mcp_integration.py
+
+      - name: Run agent tests
+        run: python .claude/skills/fund-selector/tests/agents/test_agents_v2.py
+
+      - name: Run synthesizer veto tests
+        run: python .claude/skills/fund-selector/tests/agents/test_synth_veto_deep.py
+
+      - name: Run prompt coherence tests
+        run: python .claude/skills/fund-selector/tests/agents/test_prompt_coherence.py
+
+      - name: Run philosophy depth tests
+        run: python .claude/skills/fund-selector/tests/agents/test_philosophy_depth.py
+
+      - name: Run integration tests
+        run: python .claude/skills/fund-selector/tools/test_integration.py
+
+      - name: Run adversarial tests
+        run: python .claude/skills/fund-selector/tools/test_adversarial.py
+
+      - name: Run resilience tests
+        run: python .claude/skills/fund-selector/tools/test_resilience.py
+
+      - name: Run e2e pipeline tests
+        run: python .claude/skills/fund-selector/tests/test_e2e_pipeline.py
+
+      - name: Run eval tests
+        run: python .claude/skills/fund-selector/tests/evals/run_evals.py
+
+      - name: Run penetration+protection tests
+        run: |
+          python .claude/skills/fund-recommend/tests/test_ai_berkshire_port.py
+          python .claude/skills/fund-recommend/tests/agents/test_agents.py

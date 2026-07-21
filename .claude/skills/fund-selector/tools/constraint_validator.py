@@ -62,6 +62,9 @@ def validate_constraints(rec: dict) -> dict:
     # 约束一：穿透防重叠（行业≤15%）
     _check_industry_overlap(rec, failures)
 
+    # 约束一补充：持仓相关性警告（重仓股重叠）
+    _check_holdings_correlation(rec, warnings)
+
     # 约束二：预算硬平衡
     _check_budget_balance(rec, failures, warnings)
 
@@ -83,11 +86,56 @@ def validate_constraints(rec: dict) -> dict:
     # 约束八：免责声明（历史筛选交叉验证为可选，归入警告）
     _check_disclaimer(rec, warnings)
 
+    # 生成修复建议（从"诊断"升级为"处方"）
+    suggestions = _generate_suggestions(failures, warnings)
+
     return {
         "passed": len(failures) == 0,
         "failures": failures,
         "warnings": warnings,
+        "suggestions": suggestions,
     }
+
+
+def _generate_suggestions(failures: list, warnings: list) -> list:
+    """根据失败项和警告生成可操作的修复建议。"""
+    suggestions = []
+    for f in failures:
+        if "穿透防重叠" in f:
+            # 提取行业名和重合度
+            import re
+            m = re.search(r'在 (.+?) 行业重合度 ([\d.]+)%', f)
+            if m:
+                industry, pct = m.group(1), m.group(2)
+                suggestions.append(
+                    f"{industry}行业重合 {pct}%：建议将其中一只基金替换为科技/消费/医药等其他行业基金"
+                )
+        elif "预算硬平衡" in f:
+            suggestions.append(
+                "定投金额超出月净储蓄：建议将月投金额降至净储蓄额以内，或确认有足额闲置现金流支撑"
+            )
+        elif "配置闭环" in f:
+            suggestions.append(
+                "配置比例偏差过大：建议调整各资产类别的实际分配比例，使其匹配第二步设定的目标"
+            )
+        elif "费率穿透" in f:
+            suggestions.append(
+                "费率数据缺失：请通过 get_fund_info 获取完整费率结构（管理费+托管费+申购费）"
+            )
+    for w in warnings:
+        if "常识校验" in w:
+            suggestions.append(
+                "估值偏离历史区间：建议改用 PB/股息率等其他指标交叉验证，或等待估值回归合理区间"
+            )
+        elif "财务预检" in w and "应急金" in w:
+            suggestions.append(
+                "无应急金：建议先存满 3-6 个月生活费作为应急金，再开始投资"
+            )
+        elif "财务预检" in w and "高息负债" in w:
+            suggestions.append(
+                "高息负债：建议优先偿还利率 >8% 的负债，再考虑投资"
+            )
+    return suggestions
 
 
 def _check_industry_overlap(rec: dict, failures: list):
@@ -108,6 +156,24 @@ def _check_industry_overlap(rec: dict, failures: list):
                         f"[穿透防重叠] {f1.get('name','?')} 与 {f2.get('name','?')} "
                         f"在 {industry} 行业重合度 {overlap:.1f}% > 15%，须替换其一"
                     )
+
+
+def _check_holdings_correlation(rec: dict, warnings: list):
+    """约束一补充：持仓相关性警告（前十大重仓股 ≥3 只相同 → 伪分散）。"""
+    funds = rec.get("funds", [])
+    if len(funds) < 2:
+        return
+    for i in range(len(funds)):
+        for j in range(i + 1, len(funds)):
+            f1, f2 = funds[i], funds[j]
+            holdings1 = set(f1.get("top_holdings", []))
+            holdings2 = set(f2.get("top_holdings", []))
+            common = holdings1 & holdings2
+            if len(common) >= 3:
+                warnings.append(
+                    f"[持仓相关性] {f1.get('name','?')} 与 {f2.get('name','?')} "
+                    f"前十大重仓股有 {len(common)} 只相同（{', '.join(list(common)[:3])}），分散效果有限"
+                )
 
 
 def _check_budget_balance(rec: dict, failures: list, warnings: list):
