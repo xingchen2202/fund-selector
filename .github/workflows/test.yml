@@ -57,6 +57,29 @@ jobs:
       - name: Run LLM behavior tests
         run: python .claude/skills/fund-selector/tools/test_llm_behavior.py
 
+      - name: Run black swan tests
+        run: python .claude/skills/fund-selector/tools/test_black_swan.py
+
+      - name: Run rebalancing tests
+        run: python .claude/skills/fund-selector/tools/test_rebalancing.py
+
+      - name: Run behavioral finance tests
+        run: python .claude/skills/fund-selector/tools/test_behavioral.py
+
+      - name: Run position sizing tests
+        run: python .claude/skills/fund-selector/tools/test_position_sizing.py
+
+      - name: Run integration v2 tests
+        run: python .claude/skills/fund-selector/tools/test_integration_v2.py
+
+      - name: Run new tool smoke tests
+        run: |
+          python .claude/skills/fund-selector/tools/stress_tester.py estimate-drawdown --drawdowns -0.25 -0.18
+          python .claude/skills/fund-selector/tools/correlation_checker.py check-overlap --holdings1 茅台 五粮液 宁德 --holdings2 茅台 五粮液 宁德 腾讯
+          python .claude/skills/fund-selector/tools/behavioral_scorer.py score --type chasing --return-1y 0.80
+          python .claude/skills/fund-selector/tools/position_optimizer.py kelly --win-rate 0.60 --payoff 1.5
+          python .claude/skills/fund-selector/tools/rebalancer.py check-threshold --target '{"stock":0.7,"bond":0.2}' --actual '{"stock":0.82,"bond":0.1}'
+
       - name: Run new tool tests
         run: |
           python .claude/skills/fund-selector/tools/stress_tester.py estimate-drawdown --drawdowns -0.25 -0.18

@@ -60,7 +60,7 @@ def test_stress_tester_cli():
     # 测试核心函数
     r = m.estimate_extreme_drawdown([-0.25, -0.18], 0.7)
     assert "adjusted_drawdown" in r
-    assert "can_absorb" in r
+    assert "risk_tier" in r  # v2.0 新增分层阈值
     print("  ✅ stress_tester 核心函数正常")
 
 

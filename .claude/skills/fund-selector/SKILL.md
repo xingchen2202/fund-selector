@@ -101,7 +101,12 @@ effort: high
 | `tools/data_validator.py` | 双源交叉验证 | `validate`, `flag-deviation` |
 | `tools/stock_screener.py` | 动量+质量筛选 | `screen`, `grade` |
 | `tools/ashare_data.py` | A 股实时数据 | `quote`, `financials`, `valuation`, `search` |
-| `tools/constraint_validator.py` | **8 条铁律程序化校验** | `validate_constraints` |
+| `tools/constraint_validator.py` | **8 条铁律程序化校验 + 数据时效 + 修复建议** | `validate_constraints` |
+| `tools/stress_tester.py` | **压力测试（分层阈值 + 恢复时间线 + 情景对比）** | `estimate-drawdown`, `stress-test`, `compare-scenarios`, `recovery-timeline` |
+| `tools/correlation_checker.py` | **持仓相关性量化（伪分散检测）** | `check-overlap`, `batch-check` |
+| `tools/behavioral_scorer.py` | **行为金融偏差量化评分（0-100 分）** | `score`, `score-all` |
+| `tools/position_optimizer.py` | **仓位优化（Kelly/风险平价/最大回撤约束）** | `kelly`, `risk-parity`, `max-drawdown`, `risk-budget` |
+| `tools/rebalancer.py` | **再平衡自动化（阈值触发/风格漂移/操作生成）** | `check-threshold`, `check-style-drift`, `generate-actions` |
 
 ---
 
