@@ -47,7 +47,8 @@ def test_black_swan_stress():
             historical_drawdowns=[data["drawdown"]],
             correlation=0.8  # 高相关性（恐慌时相关性趋同）
         )
-        can_absorb = result["can_absorb"]
+        tier = result.get("risk_tier", "unknown")
+        can_absorb = tier in ("green", "yellow")  # green/yellow 可承受
         print(f"\n  [{name}] {data['trigger']}")
         print(f"    历史回撤: {data['drawdown']:.0%}")
         print(f"    极端估计: {result['adjusted_drawdown']:.1%}")
@@ -83,10 +84,12 @@ def test_portfolio_survival():
         extreme_loss = result["extreme_loss_estimate"]
         loss_pct = result["loss_ratio"]
 
+        tier = result.get("risk_tier", "unknown")
+        can_absorb = tier in ("green", "yellow")
         print(f"\n  [{name}]")
         print(f"    投入本金: ¥{total_invested:,.0f}")
         print(f"    极端浮亏: ¥{extreme_loss:,.0f} ({loss_pct:.1%})")
-        print(f"    可承受: {'✅' if result['can_absorb'] else '❌'}")
+        print(f"    可承受: {'✅' if can_absorb else '❌'}")
         print(f"    应急预案: {result['emergency_plan']}")
 
 

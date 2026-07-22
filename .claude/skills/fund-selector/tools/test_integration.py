@@ -24,7 +24,7 @@ def test_pipeline_scale_to_audit():
     audit = _import("report_audit")
 
     # Step 1: 规模验算（份额×净值 vs 报告）
-    passed = rigor.verify_scale(nav=1.0553, shares=2.74e8, reported=2.893e9)
+    passed = rigor.verify_scale(nav=1.0553, shares=2.74e9, reported_scale=2.893e9)
     assert passed is True, "规模验算应通过"
 
     # Step 2: 三源交叉验证
