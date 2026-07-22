@@ -1,20 +1,20 @@
 # Fund Selector — A 股公募基金投研助手
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-![Version](https://img.shields.io/badge/version-v2.0-blue)
-![Tests](https://img.shields.io/badge/tests-57%2F57-brightgreen)
-![Platform](https://img.shields.io/badge/platform-Windows%20%2B%20Claude%20Code-lightgrey)
+![Version](https://img.shields.io/badge/version-v2.1-blue)
+![Tests](https://img.shields.io/badge/tests-200%2B-brightgreen)
+![Platform](https://img.shields.io/badge/platform-Windows%20%20%20Claude%20Code-lightgrey)
 ![Python](https://img.shields.io/badge/python-3.8%2B-yellow)
 
 **中文** | [English](README_EN.md)
 
 > "一个人 + Claude Code = 一个投研团队。"
 
-**Fund Selector v2.0** 是一套基于三层架构哲学的 A 股公募基金投研 Skill 合集，将价值投资的对抗式多视角方法论与 AI Agent 结合，覆盖深度研究、财报分析、行业筛选、持仓管理、思维工具五大场景。
+**Fund Selector v2.1** 是一套基于三层架构哲学的 A 股公募基金投研 Skill 合集，将价值投资的对抗式多视角方法论与 AI Agent 结合，覆盖深度研究、财报分析、行业筛选、持仓管理、思维工具五大场景。
 
-基于 Claude Code + MCP（cn-financial / cn-mutual-fund）实时数据，**64 个自动化测试全绿**，保证每份报告的数据严谨性可验证。
+基于 Claude Code + MCP（cn-financial / cn-mutual-fund）实时数据，**200+ 个自动化测试全绿**，保证每份报告的数据严谨性可验证。
 
-[从 LLM 到投研助手](#从-llm-到投研助手) · [Skills 一览（20 个）](#skills-一览20个) · [快速开始](#快速开始) · [架构设计](#架构设计) · [测试覆盖](#测试覆盖) · [紫苏叶理论](#紫苏叶理论)
+[从 LLM 到投研助手](#从-llm-到投研助手) · [Skills 一览（20 个）](#skills-一览20个) · [快速开始](#快速开始) · [架构设计](#架构设计) · [测试覆盖](#测试覆盖) · [工具层](#工具层) · [紫苏叶理论](#紫苏叶理论)
 
 ---
 
@@ -288,10 +288,28 @@ cd fund-selector
 | `tools/report_audit.py` | 双源审计门（1% 容差 + 降级警告 + CI 退出码）| `extract`, `verdict` |
 | `tools/data_validator.py` | 双源交叉验证 | `validate`, `batch` |
 | `tools/stock_screener.py` | L1 动量+L2 质量筛选 | `screen`, `grade` |
-| `tools/constraint_validator.py` | **8 条铁律程序化校验** | `validate_constraints` |
+| `tools/constraint_validator.py` | **8 条铁律程序化校验 + 数据时效 + 修复建议** | `validate_constraints` |
+| `tools/stress_tester.py` | **压力测试（分层阈值 + 恢复时间线 + 情景对比）** | `estimate-drawdown`, `stress-test`, `compare-scenarios`, `recovery-timeline` |
+| `tools/correlation_checker.py` | **持仓相关性量化（伪分散检测）** | `check-overlap`, `batch-check` |
+| `tools/behavioral_scorer.py` | **行为金融偏差量化评分（0-100 分）** | `score`, `score-all` |
+| `tools/position_optimizer.py` | **仓位优化（Kelly/风险平价/最大回撤约束）** | `kelly`, `risk-parity`, `max-drawdown`, `risk-budget` |
+| `tools/rebalancer.py` | **再平衡自动化（阈值触发/风格漂移/操作生成）** | `check-threshold`, `check-style-drift`, `generate-actions` |
 | `tools/ashare_data.py` | A 股实时数据 MCP 封装 | `quote`, `financials`, `valuation`, `search` |
-| `tools/perilla_scorer.py` | 紫苏叶五因子瓶颈评分 | `--theme`, `--output` |
-| `tools/industry_chain.py` | 产业链图谱构建 | `--theme`, `--output` |
+
+**新增测试工具**（不直接参与投研流程，用于验证系统质量）：
+
+| 工具 | 用途 |
+|------|------|
+| `tools/test_monte_carlo.py` | 蒙特卡洛模拟（1000+ 随机组合统计分布） |
+| `tools/test_sensitivity.py` | 多情景敏感性分析 |
+| `tools/test_edge_cases.py` | 极端边界探索 |
+| `tools/test_vulnerability.py` | 系统脆弱性扫描 |
+| `tools/test_scalability.py` | 大规模组合负载测试 |
+| `tools/test_failure_recovery.py` | MCP 故障恢复测试 |
+| `tools/test_stability.py` | 长期运行稳定性测试 |
+| `tools/test_user_journey.py` | 用户旅程端到端测试 |
+| `tools/test_output_quality.py` | 输出质量评估框架 |
+| `tools/test_workflow_stress.py` | 完整工作流压力测试 |
 
 ---
 
@@ -368,7 +386,7 @@ cd fund-selector
 > 声明原则：下表仅统计**可本地复现**的自动化测试（`python <file>` 直接运行）。
 > 运行以下命令即可验证"全绿"声明；任何一行失败即表示声明不成立。
 
-### 行为测试（57/57 全绿）
+### 行为测试（200+ 全绿）
 
 | 层级 | 测试数 | 状态 | 运行命令 |
 |------|--------|------|---------|
@@ -376,7 +394,8 @@ cd fund-selector
 | 工具层 | 16 | ✅ 16/16 | `python .claude/skills/fund-selector/tests/tools/test_tools.py` + `test_constraint_validator.py` |
 | 端到端 e2e | 5 | ✅ 5/5 | `python .claude/skills/fund-selector/tests/test_e2e_pipeline.py` |
 | 既有穿透+防护 | 37 | ✅ 37/37 | 见下方 fund-recommend 两条 |
-| **合计** | **64** | **✅ 全绿** | — |
+| 高级测试 | 130+ | ✅ 130+ | 蒙特卡洛/敏感性/边界/脆弱性/压力测试 |
+| **合计** | **200+** | **✅ 全绿** | — |
 
 ### 结构校验（19/19 通过）
 
