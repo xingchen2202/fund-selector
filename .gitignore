@@ -1,20 +1,56 @@
-# 个人持仓数据（不上传）
-portfolio.json
+# ============================================
+# Fund Selector — .gitignore
+# ===========================================
 
-# 生成的报告文件（不上传）
+# --- 敏感信息（永远不要上传）---
+.claude/settings.local.json
+.mcp.json
+*.pem
+*.key
+.env
+.env.*
+secrets/
+
+# --- 个人持仓数据 ---
+portfolio.json
+fund_screening*.xlsx
+
+# --- 生成的报告文件 ---
 fund-reports/
 
-# 共享知识库（上传到GitHub）
-# .claude/skills/_shared/  ← 允许上传
+# --- 个人工作笔记（本地开发用）---
+.planning/
+task_plan.md
+progress.md
+findings.md
+skill-design-brief.md
+iteration-3/
 
-# 大数据文件
-*.xlsx
-
-# 临时文件
-columns.txt
+# --- 个人独立脚本（非 skill 部分）---
+fund_selector.py
+weekly_report.py
+import_alipay.py
+generate_corrected_excel.py
 pipeline_runner.py
+columns.txt
 
-# Python 缓存
+# --- 旧版备份 ---
+.claude/skills/fund-recommend/iteration-2-backup/
+.claude/skills/fund-recommend/iteration-3-backup/
+
+# --- 一次性审计报告（已过时）---
+.claude/skills/fund-selector/reports/SKILL_AUDIT_REPORT.md
+
+# --- 嵌套 git 仓库 / 外部依赖 ---
+FinanceAgent/
+ai-berkshire/
+cn-financial-mcp/
+cn-financial-services-plugins/
+cn-mutual-fund/
+config/
+registry/
+
+# --- Python 缓存 ---
 __pycache__/
 *.pyc
 *.pyo
@@ -22,63 +58,42 @@ __pycache__/
 .Python
 *.so
 
-# 虚拟环境
+# --- 虚拟环境 ---
 venv/
 .venv/
 env/
 
-# IDE 配置
+# --- IDE 配置 ---
 .idea/
 .vscode/
 *.swp
 *.swo
+*.sublime-*
 
-# 系统文件
+# --- 系统文件 ---
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# 日志文件
+# --- 日志文件 ---
 *.log
+*_stderr.txt
+*_stdout.json
+C:Users*
 
-# screenpipe / 屏幕录制调试输出
+# --- screenpipe / 屏幕录制调试输出 ---
 _screen_*
 screen_*.txt
 screen_*.json
 
-# Windows 设备名误生成的文件
+# --- Windows 设备名误生成的文件 ---
 nul
 con
 prn
 aux
 
-# 个人工作笔记（本地开发用，不上传）
-.planning/
-task_plan.md
-progress.md
-findings.md
-skill-design-brief.md
-
-# 个人独立脚本（非 skill 部分）
-fund_selector.py
-weekly_report.py
-import_alipay.py
-generate_corrected_excel.py
-
-# 旧版备份
-.claude/skills/fund-recommend/iteration-2-backup/
-.claude/skills/fund-recommend/iteration-3-backup/
-
-# 一次性审计报告（已过时）
-.claude/skills/fund-selector/reports/SKILL_AUDIT_REPORT.md
-
-# 嵌套 git 仓库 / 外部依赖（本地运行需要，但不并入本仓库）
-FinanceAgent/
-ai-berkshire/
-cn-financial-mcp/
-cn-financial-services-plugins/
-cn-mutual-fund/
-
-# 本地配置与迭代工作目录
-config/
-iteration-3/
+# --- 临时文件 ---
+*.tmp
+*.bak
+*.swp
+*~
