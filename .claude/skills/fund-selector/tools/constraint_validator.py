@@ -86,6 +86,9 @@ def validate_constraints(rec: dict) -> dict:
     # 约束八：免责声明（历史筛选交叉验证为可选，归入警告）
     _check_disclaimer(rec, warnings)
 
+    # 约束九：数据时效校验（>5 个交易日 → 警告）
+    _check_data_freshness(rec, warnings)
+
     # 生成修复建议（从"诊断"升级为"处方"）
     suggestions = _generate_suggestions(failures, warnings)
 
@@ -266,6 +269,23 @@ def _check_disclaimer(rec: dict, warnings: list):
     """约束八（部分）：免责声明 + 历史交叉验证提示。"""
     if not rec.get("disclaimers"):
         warnings.append("[合规] 输出缺少免责声明")
+
+
+def _check_data_freshness(rec: dict, warnings: list):
+    """约束九：数据时效校验（>5 个交易日 → 警告）。"""
+    from datetime import datetime, timedelta
+    max_stale_days = 5
+    for f in rec.get("funds", []):
+        data_date_str = f.get("data_date") or f.get("nav_date")
+        if data_date_str:
+            try:
+                data_date = datetime.strptime(str(data_date_str)[:10], "%Y-%m-%d")
+                if (datetime.now() - data_date).days > max_stale_days:
+                    warnings.append(
+                        f"[数据时效] {f.get('name','?')} 数据日期 {data_date_str} 已超过 {max_stale_days} 个交易日，可能陈旧"
+                    )
+            except (ValueError, TypeError):
+                pass  # 日期格式无法解析，跳过
 
 
 def main():

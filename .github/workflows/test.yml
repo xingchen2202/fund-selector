@@ -48,6 +48,20 @@ jobs:
       - name: Run adversarial tests
         run: python .claude/skills/fund-selector/tools/test_adversarial.py
 
+      - name: Run boundary tests
+        run: python .claude/skills/fund-selector/tools/test_boundary.py
+
+      - name: Run e2e integration tests
+        run: python .claude/skills/fund-selector/tools/test_e2e_integration.py
+
+      - name: Run LLM behavior tests
+        run: python .claude/skills/fund-selector/tools/test_llm_behavior.py
+
+      - name: Run new tool tests
+        run: |
+          python .claude/skills/fund-selector/tools/stress_tester.py estimate-drawdown --drawdowns -0.25 -0.18
+          python .claude/skills/fund-selector/tools/correlation_checker.py check-overlap --holdings1 茅台 五粮液 宁德 --holdings2 茅台 五粮液 宁德 腾讯
+
       - name: Run resilience tests
         run: python .claude/skills/fund-selector/tools/test_resilience.py
 
