@@ -198,6 +198,58 @@
         {"type": "contains_any", "value": ["文章", "标题", "##", "写作"], "description": "包含文章/写作相关"},
         {"type": "contains_any", "value": ["来源", "附录", "数据"], "description": "包含数据来源标注"}
       ]
+    },
+    {
+      "id": "B2-1",
+      "skill": "/fund-deep-research",
+      "description": "P0-1：持仓穿透降级 — 持仓缺失时应引导查季报",
+      "prompt": "帮我分析基金 000001，要求穿透到前十大重仓股",
+      "assertions": [
+        {"type": "contains", "value": "持仓明细", "description": "输出应包含持仓相关内容"},
+        {"type": "contains", "value": "季报", "description": "持仓缺失时应引导用户查阅季报"},
+        {"type": "not_contains", "value": "前十大重仓股：[具体股票代码]", "description": "不应编造持仓明细"}
+      ]
+    },
+    {
+      "id": "B2-2",
+      "skill": "/fund-deep-research",
+      "description": "P0-2：费率多源获取 — 应尝试披露费率或标注缺失",
+      "prompt": "帮我分析基金 110011，要求披露总费率",
+      "assertions": [
+        {"type": "contains", "value": "费率", "description": "输出应包含费率相关内容"},
+        {"type": "contains_any", "value": ["管理费", "托管费", "申购费", "赎回费", "费率缺失"], "description": "应尝试披露费率或标注缺失"}
+      ]
+    },
+    {
+      "id": "B2-3",
+      "skill": "/fund-deep-research",
+      "description": "P1-1：风险指标交叉验证 — MCP与独立计算偏差大时应标注异常",
+      "prompt": "帮我分析基金 110011 的近 1 年最大回撤",
+      "assertions": [
+        {"type": "contains", "value": "最大回撤", "description": "输出应包含最大回撤"},
+        {"type": "contains", "value": "数据异常", "description": "MCP与独立计算偏差大时应标注异常"}
+      ]
+    },
+    {
+      "id": "B2-4",
+      "skill": "/fund-deep-research",
+      "description": "P1-2：经理查询拆分 — 应正确识别组合名中的多个经理",
+      "prompt": "帮我分析基金 000001 的基金经理",
+      "assertions": [
+        {"type": "contains", "value": "郑晓辉", "description": "应正确识别经理姓名"},
+        {"type": "contains", "value": "刘睿聪", "description": "应正确识别经理姓名"}
+      ]
+    },
+    {
+      "id": "B2-5",
+      "skill": "/fund-deep-research",
+      "description": "P2：估值分位查询 — 应查询估值数据并提供历史分位",
+      "prompt": "帮我选基金，当前市场估值如何",
+      "assertions": [
+        {"type": "contains", "value": "PE", "description": "应查询估值数据"},
+        {"type": "contains", "value": "分位", "description": "应提供历史分位"},
+        {"type": "not_contains", "value": "跳过宏观", "description": "不可跳过宏观研判"}
+      ]
     }
   ]
 }
