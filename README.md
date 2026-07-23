@@ -1,7 +1,7 @@
 # Fund Selector — A 股公募基金投研助手
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-![Version](https://img.shields.io/badge/version-v2.1-blue)
+![Version](https://img.shields.io/badge/version-v2.2-blue)
 ![Tests](https://img.shields.io/badge/tests-200%2B-brightgreen)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%20%20Claude%20Code-lightgrey)
 ![Python](https://img.shields.io/badge/python-3.8%2B-yellow)
@@ -115,6 +115,56 @@ python .claude/skills/fund-selector/tests/agents/test_agents_v2.py
 python .claude/skills/fund-selector/tests/tools/test_tools.py
 # 结果：64/64 全绿 ✅（含约束校验 6 个 + 穿透+防护 37 个）
 ```
+
+---
+
+## 数据质量与容错（v2.2 新增）
+
+> 2026-07-23 基于 30 节深度审计，修复 5 个核心数据质量问题。
+
+### 持仓穿透降级
+
+当 MCP 接口不返回个股持仓明细时，自动降级为三级穿透：
+
+| 等级 | 数据可得 | 分析深度 |
+|------|---------|---------|
+| A 级 | 前十大重仓股 + 行业配置 | 完整穿透 |
+| B 级 | 仅行业配置 | 一级穿透（申万一级行业） |
+| C 级 | 穿透数据为空 | 引导用户查阅基金季报验证 |
+
+### 费率多源获取
+
+当 MCP 费率详情为空时，按优先级获取：
+
+1. **MCP** get_fund_info → 提取管理费/托管费/申购费/赎回费
+2. **东方财富/天天基金 API** → 补充费率数据
+3. **标注 [⚠️ 费率缺失]** → 引导用户到销售平台确认
+
+### 风险指标交叉验证
+
+当 MCP 返回风险指标时：
+
+1. **独立计算**：用净值历史计算近 1 年最大回撤
+2. **对比验证**：独立计算值 vs MCP 返回值
+3. **偏差标注**：偏差 > 5pp 时标注 [⚠️ 数据异常]，优先采用独立计算值
+
+### 经理查询容错
+
+当基金经理字段包含多个姓名时（如"张坤 彭珂"）：
+
+1. 自动拆分为单独姓名
+2. 分别查询每位经理信息
+3. 合并输出，从业年限最长者标记为"主理人"
+
+### 宏观研判铁律（不可跳过）
+
+在生成任何投资建议前，必须执行宏观研判：
+
+1. **估值分位查询**：调用 cn-financial 获取沪深300/中证500 PE 历史分位
+2. **市场温度判定**：
+   - PE < 30% 分位：低估区，可积极配置（股票仓位 70-80%）
+   - PE 30%-70% 分位：合理区，中性配置（股票仓位 50-60%）
+   - PE > 70% 分位：高估区，谨慎配置（股票仓位 30-40%）
 
 ---
 
