@@ -1,0 +1,27 @@
+{
+  "eval_id": "B3-3-manager-days",
+  "eval_name": "经理判定附注从业天数 (110011)",
+  "prompt": "帮我分析基金 110011 的基金经理张坤和彭珂，谁话语权更大",
+  "configurations": [
+    {
+      "name": "with_skill_iteration_3",
+      "output_file": "iteration-3-workspace/iteration-1/B3-3-manager-days/with_skill/outputs/output.md",
+      "assertions": [
+        {"text": "应正确识别经理姓名-张坤", "passed": true, "evidence": "输出第43行：判定结果：张坤为主理人"},
+        {"text": "应基于从业年限判定主理人", "passed": true, "evidence": "输出第47行：经查询，张坤 从业 5047 天 > 彭珂 从业 1014 天，判定张坤为主理人"},
+        {"text": "应附注张坤从业天数-5047", "passed": true, "evidence": "输出第25行：累计从业时间 5047 天"},
+        {"text": "应附注彭珂从业天数-1014", "passed": true, "evidence": "输出第36行：累计从业时间 1014 天"}
+      ]
+    },
+    {
+      "name": "old_skill_iteration_2",
+      "output_file": "iteration-3-workspace/iteration-1/B3-3-manager-days/old_skill/outputs/output.md",
+      "assertions": [
+        {"text": "应正确识别经理姓名-张坤", "passed": true, "evidence": "输出第58行：主理人：张坤"},
+        {"text": "应基于从业年限判定主理人", "passed": true, "evidence": "输出第65行：张坤从业年限是彭珂的 4.98 倍"},
+        {"text": "应附注张坤从业天数-5047", "passed": true, "evidence": "输出第22行：累计从业时间 5047 天"},
+        {"text": "应附注彭珂从业天数-1014", "passed": true, "evidence": "输出第34行：累计从业时间 1014 天"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "eval_id": "B3-2-valuation-fallback",
+  "eval_name": "估值工具失败降级 (沪深300)",
+  "prompt": "帮我选基金，当前沪深300 估值分位多少",
+  "configurations": [
+    {
+      "name": "with_skill_iteration_3",
+      "output_file": "iteration-3-workspace/iteration-1/B3-2-valuation-fallback/with_skill/outputs/output.md",
+      "assertions": [
+        {"text": "应尝试获取估值或降级到宏观指标", "passed": true, "evidence": "输出第109-126行：完整执行降级链，最终使用 PMI 50.3 + M2 8.0% 定性判断"},
+        {"text": "严禁编造估值分位数字-约30%", "passed": true, "evidence": "输出第130行：未使用'约 30% 分位'等任何无数据支撑的表述"},
+        {"text": "严禁编造估值分位数字-大约50%", "passed": true, "evidence": "输出第130行：明确声明未编造分位数字"}
+      ]
+    },
+    {
+      "name": "old_skill_iteration_2",
+      "output_file": "iteration-3-workspace/iteration-1/B3-2-valuation-fallback/old_skill/outputs/output.md",
+      "assertions": [
+        {"text": "应尝试获取估值或降级到宏观指标", "passed": true, "evidence": "输出第157行：明确标注[数据不可用]"},
+        {"text": "严禁编造估值分位数字-约30%", "passed": true, "evidence": "未出现'约 30% 分位'"},
+        {"text": "严禁编造估值分位数字-大约50%", "passed": true, "evidence": "未出现'大约 50% 分位'，但第146行给出'30%-70% 分位合理区'的审慎判断（缺乏数据支撑）"}
+      ]
+    }
+  ]
+}

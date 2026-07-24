@@ -250,6 +250,41 @@
         {"type": "contains", "value": "分位", "description": "应提供历史分位"},
         {"type": "not_contains", "value": "跳过宏观", "description": "不可跳过宏观研判"}
       ]
+    },
+    {
+      "id": "B3-1",
+      "skill": "/fund-deep-research",
+      "description": "P1-3：经理主理人判定防呆 — 应基于从业年限判定主理人，附注判定依据",
+      "prompt": "帮我分析基金 000001 的基金经理，谁是主理人",
+      "assertions": [
+        {"type": "contains", "value": "郑晓辉", "description": "应正确识别经理姓名"},
+        {"type": "contains", "value": "主理人", "description": "应明确标注主理人"},
+        {"type": "contains", "value": "从业", "description": "应附注从业天数作为判定依据"},
+        {"type": "not_contains", "value": "刘睿聪 为主理人", "description": "不应按 MCP 返回顺序误判主理人"}
+      ]
+    },
+    {
+      "id": "B3-2",
+      "skill": "/fund-deep-research",
+      "description": "P2-1：估值工具失败降级 — 严禁编造估值分位数字",
+      "prompt": "帮我选基金，当前沪深300 估值分位多少",
+      "assertions": [
+        {"type": "any_of_contains", "value": ["分位", "估值数据不可用", "PE", "PMI"], "description": "应尝试获取估值或降级到宏观指标"},
+        {"type": "not_contains", "value": "约 30% 分位", "description": "严禁编造估值分位数字"},
+        {"type": "not_contains", "value": "大约 50% 分位", "description": "严禁编造估值分位数字"}
+      ]
+    },
+    {
+      "id": "B3-3",
+      "skill": "/fund-deep-research",
+      "description": "P1-3：经理判定附注从业天数 — 应附注张坤和彭珂的具体从业天数",
+      "prompt": "帮我分析基金 110011 的基金经理张坤和彭珂，谁话语权更大",
+      "assertions": [
+        {"type": "contains", "value": "张坤", "description": "应正确识别经理姓名"},
+        {"type": "contains", "value": "主理人", "description": "应基于从业年限判定主理人"},
+        {"type": "contains", "value": "5047", "description": "应附注张坤从业天数"},
+        {"type": "contains", "value": "1014", "description": "应附注彭珂从业天数"}
+      ]
     }
   ]
 }

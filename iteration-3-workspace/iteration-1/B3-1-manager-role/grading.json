@@ -1,0 +1,27 @@
+{
+  "eval_id": "B3-1-manager-role",
+  "eval_name": "经理主理人判定防呆 (000001)",
+  "prompt": "帮我分析基金 000001 的基金经理，谁是主理人",
+  "configurations": [
+    {
+      "name": "with_skill_iteration_3",
+      "output_file": "iteration-3-workspace/iteration-1/B3-1-manager-role/with_skill/outputs/output.md",
+      "assertions": [
+        {"text": "应正确识别经理姓名-郑晓辉", "passed": true, "evidence": "输出第45行：主理人：郑晓辉"},
+        {"text": "应明确标注主理人", "passed": true, "evidence": "输出第45行：主理人：郑晓辉"},
+        {"text": "应附注从业天数作为判定依据", "passed": true, "evidence": "输出第56-59行：经查询，郑晓辉 从业 5337 天 > 刘睿聪 从业 1304 天，判定 郑晓辉 为主理人"},
+        {"text": "不应按 MCP 返回顺序误判主理人", "passed": true, "evidence": "输出第51行明确引用规则'禁止以 MCP 返回顺序判定主理人'，正确判定郑晓辉为主理人"}
+      ]
+    },
+    {
+      "name": "old_skill_iteration_2",
+      "output_file": "iteration-3-workspace/iteration-1/B3-1-manager-role/old_skill/outputs/output.md",
+      "assertions": [
+        {"text": "应正确识别经理姓名-郑晓辉", "passed": true, "evidence": "输出第42行：主理人：郑晓辉"},
+        {"text": "应明确标注主理人", "passed": true, "evidence": "输出第42行：主理人：郑晓辉"},
+        {"text": "应附注从业天数作为判定依据", "passed": true, "evidence": "输出第20-21行：累计从业时间 5337 天/1304 天"},
+        {"text": "不应按 MCP 返回顺序误判主理人", "passed": true, "evidence": "正确判定郑晓辉为主理人（5337>1304），但未显式引用'禁止按顺序'规则"}
+      ]
+    }
+  ]
+}
