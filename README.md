@@ -1,20 +1,21 @@
 # Fund Selector — A 股公募基金投研助手
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-![Version](https://img.shields.io/badge/version-v2.2-blue)
+![Version](https://img.shields.io/badge/version-v2.3-blue)
 ![Tests](https://img.shields.io/badge/tests-200%2B-brightgreen)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%20%20Claude%20Code-lightgrey)
 ![Python](https://img.shields.io/badge/python-3.8%2B-yellow)
+![Skills](https://img.shields.io/badge/skills-41-blue)
 
 **中文** | [English](README_EN.md)
 
 > "一个人 + Claude Code = 一个投研团队。"
 
-**Fund Selector v2.1** 是一套基于三层架构哲学的 A 股公募基金投研 Skill 合集，将价值投资的对抗式多视角方法论与 AI Agent 结合，覆盖深度研究、财报分析、行业筛选、持仓管理、思维工具五大场景。
+**Fund Selector v2.3** 是一套基于三层架构哲学的 A 股公募基金投研 Skill 合集，将价值投资的对抗式多视角方法论与 AI Agent 结合，覆盖深度研究、财报分析、行业筛选、持仓管理、思维工具、主题瓶颈分析六大场景。
 
 基于 Claude Code + MCP（cn-financial / cn-mutual-fund）实时数据，**200+ 个自动化测试全绿**，保证每份报告的数据严谨性可验证。
 
-[从 LLM 到投研助手](#从-llm-到投研助手) · [Skills 一览（20 个）](#skills-一览20个) · [快速开始](#快速开始) · [架构设计](#架构设计) · [测试覆盖](#测试覆盖) · [工具层](#工具层) · [紫苏叶理论](#紫苏叶理论)
+[从 LLM 到投研助手](#从-llm-到投研助手) · [Skills 一览（41 个）](#skills-一览41-个) · [快速开始](#快速开始) · [数据质量与容错](#数据质量与容错v23) · [架构设计](#架构设计) · [测试覆盖](#测试覆盖)
 
 ---
 
@@ -118,7 +119,36 @@ python .claude/skills/fund-selector/tests/tools/test_tools.py
 
 ---
 
-## 数据质量与容错（v2.2 新增）
+## 数据质量与容错（v2.3）
+
+> 2026-07-24 基于 iteration-3 重测审计，修复 2 个规则层漏洞（P1-3 经理主理人判定防呆 + P2-1 估值工具失败降级）。
+
+### 经理主理人判定防呆（v2.3 新增）
+
+**问题**：MCP 返回的经理顺序不稳定（如 "郑晓辉 刘睿聪" → "刘睿聪 郑晓辉"），若按顺序取第一个会误判主理人。
+
+**修复**：强化经理查询容错规则：
+
+1. **禁止**以 MCP 返回顺序判定主理人
+2. **必须**查询并比较每位经理的累计从业天数
+3. 输出附注判定依据："经查询，XX 从业 N 天 > YY 从业 M 天，判定 XX 为主理人"
+4. 差距 < 10% 时标注"双经理制，话语权接近"
+
+### 估值工具失败降级链（v2.3 新增）
+
+**问题**：`get_valuation_metrics` 对指数代码返回空数据，规则缺少降级路径。
+
+**修复**：3 级降级链 + 严禁编造分位数字：
+
+| 优先级 | 工具 | 失败时 |
+|--------|------|--------|
+| 1 | `get_valuation_metrics` | 降级到优先级 2 |
+| 2 | `get_index_pe_pb` 等 PE/PB 工具 | 降级到优先级 3 |
+| 3 | `get_macro_pmi` + `get_macro_money_supply` + `get_north_bound_flow` | 定性判断，标注 [⚠️ 估值数据不可用] |
+
+---
+
+## 数据质量与容错（v2.2）
 
 > 2026-07-23 基于 30 节深度审计，修复 5 个核心数据质量问题。
 
@@ -173,7 +203,7 @@ python .claude/skills/fund-selector/tests/tools/test_tools.py
 ```text
 ┌─────────────────────────────── Skill 层 ───────────────────────────────┐
 │   深度研究 · 财报分析 · 行业筛选 · 持仓管理 · 思维工具 · 主题瓶颈分析     │
-│   （20 个 skill 入口：轻量 skill 直连工具；团队型 skill 经 Agent 层）    │
+│   （41 个 skill 入口：轻量 skill 直连工具；团队型 skill 经 Agent 层）    │
 └──────────────────────────────────┬──────────────────────────────────────┘
                                    ▼
 ┌─────────────────────────────── Agent 层 ───────────────────────────────┐
@@ -194,13 +224,13 @@ python .claude/skills/fund-selector/tests/tools/test_tools.py
 
 **三层设计哲学**：
 
-- **Skill 层**：把"你要做什么"抽象成 20 个明确入口——深度研究、财报分析、行业筛选、持仓管理、思维工具、主题瓶颈分析，按场景选用
+- **Skill 层**：把"你要做什么"抽象成 41 个明确入口——深度研究、财报分析、行业筛选、持仓管理、思维工具、主题瓶颈分析，按场景选用
 - **Agent 层**：团队型 skill（如 `/fund-team`、`/news-pulse`）由 Team Lead 并行调度 4 个大师视角 Agent——各自独立搜索、独立判断、互相挑战，最后综合研判；轻量 skill 不经过这一层，直连工具快进快出
 - **工具层**：精确计算、实时检索、报告抽检——保证每份报告的数据严谨性可验证
 
 ---
 
-## Skills 一览（20 个）
+## Skills 一览（41 个）
 
 ### 深度研究类（5 个）
 
@@ -644,11 +674,21 @@ Phase 5（进行中）: 自动化测试
 
 ## 贡献指南
 
-欢迎社区参与：如有任何想法或改进，欢迎提交 Issue 或 Pull Request 与我们讨论。
+欢迎社区参与！详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
-以下四类反馈尤为宝贵：**Bug 报告**（行为与文档不符）、**性能优化**（运行效率与资源占用）、**测试用例**（补充边界场景覆盖）、**新功能**（新 skill 与新工具）。
+提交前请确保已跑完整测试用例（`tests/agents/test_agents_v2.py`、`tests/tools/test_tools.py` 等），并确认全绿，以免破坏现有回归安全网。
 
-提交前请确保已跑完整 **57 个测试用例**（`tests/agents/test_agents_v2.py`、`tests/tools/test_tools.py` 等），并确认全绿，以免破坏现有回归安全网。
+---
+
+## 安全
+
+如发现安全漏洞，请按照 [SECURITY.md](SECURITY.md) 的流程私下报告（不要公开 Issue）。
+
+---
+
+## 行为准则
+
+本项目遵守 [Contributor Covenant](https://www.contributor-covenant.org) 行为准则，详见 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)。
 
 ---
 
