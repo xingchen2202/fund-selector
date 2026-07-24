@@ -12,10 +12,13 @@
 import sys, io, json
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parent.parent.parent.parent.parent
+
+
 if sys.platform == "win32":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
-TOOLS = Path(r"C:\Users\22218\Desktop\fund-selector\.claude\skills\fund-selector\tools")
+TOOLS = ROOT / ".claude/skills/fund-selector/tools"
 
 
 def _import(name):
@@ -125,8 +128,8 @@ def test_all_funds_vetoed():
     print("极端边界：所有基金被否决")
     print("=" * 60)
 
-    AGT = Path(r"C:\Users\22218\Desktop\fund-selector\.claude/skills/fund-selector/agents")
-    OUTPUTS = Path(r"C:\Users\22218\Desktop\fund-selector\fund-reports/_agent_outputs")
+    AGT = ROOT / ".claude/skills/fund-selector/agents"
+    OUTPUTS = ROOT / "fund-reports/_agent_outputs"
     OUTPUTS.mkdir(exist_ok=True)
 
     # 所有基金风险 1 星
@@ -148,7 +151,7 @@ def test_all_funds_vetoed():
                 synthesize.main()
                 sys.stdout = old_stdout
 
-        r = json.loads((Path(r"C:\Users\22218\Desktop\fund-selector\fund-reports") / "_agent_synthesized.json").read_text(encoding="utf-8"))
+        r = json.loads((ROOT / "fund-reports" / "_agent_synthesized.json").read_text(encoding="utf-8"))
         print(f"  首推: {r['top_pick']}")
         print(f"  备选: {r.get('fallback_candidate', {}).get('code')}")
         print(f"  否决数: {len(r['vetoes'])}")
@@ -160,7 +163,7 @@ def test_all_funds_vetoed():
             p = OUTPUTS / f"{f}.json"
             if p.exists():
                 p.unlink()
-        p = Path(r"C:\Users\22218\Desktop\fund-selector\fund-reports/_agent_synthesized.json")
+        p = ROOT / "fund-reports/_agent_synthesized.json"
         if p.exists():
             p.unlink()
 

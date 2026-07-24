@@ -52,7 +52,7 @@ Step 0 → Step 1 → Step 2 → Step 3
 
 在开始任何工作之前，必须完成以下读取：
 
-1. **读取持仓文件**: `C:\Users\22218\Desktop\fund-selector\portfolio.json`
+1. **读取持仓文件**: `portfolio.json`（仓库根目录）
    - 提取所有基金的 code、name、units、cost_nav、cost_value
 
 2. **读取规则定义**: `${CLAUDE_SKILL_DIR}\..\_shared\rule-definitions.md`
@@ -405,7 +405,7 @@ python ${CLAUDE_SKILL_DIR}\scripts\generate_recommend.py --pipeline
 - 本报告不构成投资建议
 ```
 
-**报告保存路径**: `C:\Users\22218\Desktop\fund-selector\fund-reports\recommend_YYYYMMDD.txt`
+**报告保存路径**: `fund-reports/recommend_YYYYMMDD.txt`（仓库根目录）
 
 同时在对话中输出报告完整内容。
 

@@ -3,11 +3,14 @@
 import sys, io, json, importlib
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parent.parent.parent.parent.parent.parent
+
+
 if sys.platform == "win32":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
-REPORTS = Path(r"C:\Users\22218\Desktop\fund-selector\fund-reports")
-AGT = Path(r"C:\Users\22218\Desktop\fund-selector\.claude\skills\fund-selector\agents")
+REPORTS = REPO / "fund-reports"
+AGT = ROOT / ".claude/skills/fund-selector/agents"
 OUTPUTS = REPORTS / "_agent_outputs"
 
 

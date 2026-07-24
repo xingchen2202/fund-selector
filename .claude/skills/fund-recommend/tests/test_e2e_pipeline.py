@@ -7,7 +7,7 @@ if sys.platform == "win32":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
-REPO = Path(r"C:\Users\22218\Desktop\fund-selector")
+REPO = Path(__file__).resolve().parent.parent.parent.parent.parent
 REPORTS = REPO / "fund-reports"
 
 # 读取 step2 候选

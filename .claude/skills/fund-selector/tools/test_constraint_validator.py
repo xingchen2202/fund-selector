@@ -4,10 +4,13 @@ import sys
 import io
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parent.parent.parent.parent.parent
+
+
 if sys.platform == "win32":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
-TOOLS = Path(r"C:\Users\22218\Desktop\fund-selector\.claude\skills\fund-selector\tools")
+TOOLS = ROOT / ".claude/skills/fund-selector/tools"
 
 
 def _import():

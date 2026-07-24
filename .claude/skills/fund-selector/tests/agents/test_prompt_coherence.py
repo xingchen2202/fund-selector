@@ -7,10 +7,13 @@ import sys, io, re
 from pathlib import Path
 from collections import Counter
 
+ROOT = Path(__file__).resolve().parent.parent.parent.parent.parent.parent
+
+
 if sys.platform == "win32":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
-AGT = Path(r"C:\Users\22218\Desktop\fund-selector\.claude\skills\fund-selector\agents")
+AGT = ROOT / ".claude/skills/fund-selector/agents"
 
 
 def load_perspectives():

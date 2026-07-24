@@ -3,10 +3,13 @@
 import sys, io, json, importlib, os
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parent.parent.parent.parent.parent
+
+
 if sys.platform == "win32":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
-TOOLS = Path(r"C:\Users\22218\Desktop\fund-selector\.claude\skills\fund-selector\tools")
+TOOLS = ROOT / ".claude/skills/fund-selector/tools"
 
 
 def _import(name):
@@ -95,8 +98,8 @@ def test_e2e_violation_with_suggestions():
 
 def test_e2e_veto_with_fallback():
     """综合器否决 + 备选方案端到端。"""
-    AGT = Path(r"C:\Users\22218\Desktop\fund-selector\.claude\skills\fund-selector\agents")
-    OUTPUTS = Path(r"C:\Users\22218\Desktop\fund-selector\fund-reports/_agent_outputs")
+    AGT = ROOT / ".claude/skills/fund-selector/agents"
+    OUTPUTS = ROOT / "fund-reports/_agent_outputs"
     OUTPUTS.mkdir(exist_ok=True)
 
     # 设置 agent 输出：A 被否决，B 正常
@@ -116,7 +119,7 @@ def test_e2e_veto_with_fallback():
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             synthesize.main()
-        result = json.loads((Path(r"C:\Users\22218\Desktop\fund-selector\fund-reports") / "_agent_synthesized.json").read_text(encoding="utf-8"))
+        result = json.loads((ROOT / "fund-reports" / "_agent_synthesized.json").read_text(encoding="utf-8"))
 
         assert result["top_pick"] == "B", f"应首推B: {result['top_pick']}"
         assert result["vetoes"][0].startswith("A"), f"应否决A: {result['vetoes']}"
@@ -127,7 +130,7 @@ def test_e2e_veto_with_fallback():
             p = OUTPUTS / f"{f}.json"
             if p.exists():
                 p.unlink()
-        p = Path(r"C:\Users\22218\Desktop\fund-selector\fund-reports/_agent_synthesized.json")
+        p = ROOT / "fund-reports/_agent_synthesized.json"
         if p.exists():
             p.unlink()
 

@@ -3,10 +3,13 @@
 import sys, io, json
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parent.parent.parent.parent.parent
+
+
 if sys.platform == "win32":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
-TOOLS = Path(r"C:\Users\22218\Desktop\fund-selector\.claude\skills\fund-selector\tools")
+TOOLS = ROOT / ".claude/skills/fund-selector/tools"
 
 
 def _import(name):
@@ -69,8 +72,8 @@ def test_correlation_4_overlap():
 
 def test_fallback_with_empty_rankings():
     """综合器空输入不崩溃。"""
-    AGT = Path(r"C:\Users\22218\Desktop\fund-selector\.claude\skills\fund-selector\agents")
-    OUTPUTS = Path(r"C:\Users\22218\Desktop\fund-selector\fund-reports/_agent_outputs")
+    AGT = ROOT / ".claude/skills/fund-selector/agents"
+    OUTPUTS = ROOT / "fund-reports/_agent_outputs"
     OUTPUTS.mkdir(exist_ok=True)
     for name in ["value", "growth", "risk", "cycle"]:
         (OUTPUTS / f"{name}.json").write_text('{"agent":"' + name + '","rankings":[]}', encoding="utf-8")
@@ -82,7 +85,7 @@ def test_fallback_with_empty_rankings():
         import contextlib
         with contextlib.redirect_stdout(io.StringIO()):
             synthesize.main()
-        result = json.loads((Path(r"C:\Users\22218\Desktop\fund-selector\fund-reports") / "_agent_synthesized.json").read_text(encoding="utf-8"))
+        result = json.loads((ROOT / "fund-reports" / "_agent_synthesized.json").read_text(encoding="utf-8"))
         assert result["top_pick"] is None
         assert result.get("fallback_candidate") is None, "空输入应无备选"
     finally:
@@ -90,7 +93,7 @@ def test_fallback_with_empty_rankings():
             p = OUTPUTS / f"{f}.json"
             if p.exists():
                 p.unlink()
-        p = Path(r"C:\Users\22218\Desktop\fund-selector\fund-reports/_agent_synthesized.json")
+        p = ROOT / "fund-reports/_agent_synthesized.json"
         if p.exists():
             p.unlink()
 

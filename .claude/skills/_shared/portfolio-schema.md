@@ -1,7 +1,7 @@
 # Portfolio Schema
 
 ## 文件路径
-`C:\Users\22218\Desktop\fund-selector\portfolio.json`
+`portfolio.json`（仓库根目录，由用户自行创建）
 
 ## 格式规范
 

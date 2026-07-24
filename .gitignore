@@ -41,7 +41,8 @@ columns.txt
 .claude/skills/fund-recommend/iteration-3-backup/
 
 # --- 一次性审计报告（已过时）---
-.claude/skills/fund-selector/reports/SKILL_AUDIT_REPORT.md
+.claude/skills/fund-selector/reports/
+.claude/skills/fund-selector/tests/DEEP_TEST_PROMPTS.md
 
 # --- 嵌套 git 仓库 / 外部依赖 ---
 FinanceAgent/

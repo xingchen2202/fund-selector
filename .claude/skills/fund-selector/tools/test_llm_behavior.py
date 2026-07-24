@@ -13,11 +13,14 @@
 import sys, io, re
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parent.parent.parent.parent.parent
+
+
 if sys.platform == "win32":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
-SKILLS_DIR = Path(r"C:\Users\22218\Desktop\fund-selector\.claude\skills\fund-selector\skills")
-TOOLS_DIR = Path(r"C:\Users\22218\Desktop\fund-selector\.claude\skills\fund-selector\tools")
+SKILLS_DIR = ROOT / ".claude/skills/fund-selector/skills"
+TOOLS_DIR = ROOT / ".claude/skills/fund-selector/tools"
 
 
 def test_skill_has_tools_reference():
@@ -35,7 +38,7 @@ def test_skill_has_tools_reference():
 
 def test_constraint_validator_in_main_skill():
     """主 SKILL.md 应包含强制约束校验章节。"""
-    main = (Path(r"C:\Users\22218\Desktop\fund-selector\.claude\skills/fund-selector/SKILL.md")).read_text(encoding="utf-8")
+    main = (ROOT / ".claude/skills/fund-selector/SKILL.md").read_text(encoding="utf-8")
     assert "强制约束校验" in main, "SKILL.md 应包含'强制约束校验'章节"
     assert "constraint_validator" in main, "SKILL.md 应引用 constraint_validator"
     print("  ✅ SKILL.md 包含强制约束校验章节")
@@ -96,14 +99,14 @@ def test_data_freshness_in_validator():
 
 def test_fallback_in_synthesizer():
     """synthesize.py 应包含 fallback_candidate 字段。"""
-    src = (Path(r"C:\Users\22218\Desktop\fund-selector\.claude/skills/fund-selector/agents/synthesize.py")).read_text(encoding="utf-8")
+    src = (ROOT / ".claude/skills/fund-selector/agents/synthesize.py").read_text(encoding="utf-8")
     assert "fallback_candidate" in src, "synthesize.py 应包含 fallback_candidate"
     print("  ✅ synthesize.py 包含 fallback_candidate")
 
 
 def test_workflow_has_stress_test():
     """FUND_ANALYSIS_WORKFLOW 应包含压力测试章节。"""
-    workflow = Path(r"C:\Users\22218\Desktop\fund-selector/FUND_ANALYSIS_WORKFLOW.md").read_text(encoding="utf-8")
+    workflow = ROOT / "/FUND_ANALYSIS_WORKFLOW.md".read_text(encoding="utf-8")
     assert "压力测试" in workflow, "工作流应包含压力测试"
     assert "Step 5" in workflow or "Step5" in workflow, "工作流应有 Step5"
     print("  ✅ 工作流包含压力测试章节")
@@ -111,7 +114,7 @@ def test_workflow_has_stress_test():
 
 def test_4_masters_distinct():
     """4 大师视角应有明确差异化（Jaccard 距离检查）。"""
-    team_lead = Path(r"C:\Users\22218\Desktop\fund-selector/.claude/skills/fund-selector/agents/team_lead.py").read_text(encoding="utf-8")
+    team_lead = ROOT / "/.claude/skills/fund-selector/agents/team_lead.py".read_text(encoding="utf-8")
     # 每个视角应有独特的关键词
     buffett_keys = ["ROE", "free cash flow", "moat"]
     duan_keys = ["integrity", "right things", "本分"]

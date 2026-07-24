@@ -8,7 +8,7 @@ from pathlib import Path
 if sys.platform == "win32":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
-REPO = Path(r"C:\Users\22218\Desktop\fund-selector")
+REPO = Path(__file__).resolve().parent.parent.parent.parent.parent.parent
 AGT = REPO / ".claude/skills/fund-selector/agents"
 REPORTS = REPO / "fund-reports"
 
