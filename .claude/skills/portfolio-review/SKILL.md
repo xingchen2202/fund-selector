@@ -1,13 +1,9 @@
 ---
 name: portfolio-review
 description: >
-  分析当前组合的仓位、相关性、再平衡需求
-  when_to_use: 用户询问相关基金研究问题时触发
-disable-model-invocation: false
-user-invocable: true
-allowed-tools: Read Write Bash Python mcp__cn-financial mcp__cn-mutual-fund mcp__tavily mcp__node_repl
-effort: high
+  分析当前组合的仓位、相关性、再平衡需求 when_to_use: 用户询问相关基金研究问题时触发
 ---
+
 
 
 分析当前组合的仓位、相关性、再平衡需求。

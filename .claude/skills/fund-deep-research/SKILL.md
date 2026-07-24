@@ -1,13 +1,9 @@
 ---
 name: fund-deep-research
 description: >
-  对单只基金进行全面深度研究，输出结构化分析报告
-  when_to_use: 用户询问相关基金研究问题时触发
-disable-model-invocation: false
-user-invocable: true
-allowed-tools: Read Write Bash Python mcp__cn-financial mcp__cn-mutual-fund mcp__tavily mcp__node_repl
-effort: high
+  对单只基金进行全面深度研究，输出结构化分析报告 when_to_use: 用户询问相关基金研究问题时触发
 ---
+
 
 
 对单只基金进行全面深度研究，输出结构化分析报告。

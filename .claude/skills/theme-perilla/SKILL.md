@@ -1,17 +1,10 @@
 ---
 name: theme-perilla
 description: >
-  紫苏叶主题瓶颈分析。输入热门概念（AI算力/新能源/半导体/机器人等），
-  构建产业链图谱，用紫苏叶五因子模型评分瓶颈节点，推荐相关基金和股票。
-  移植自 Serenity股神紫苏叶理论（Bilibili BV1fT7z6QE2S）。
-when_to_use: >
-  用户问"紫苏叶分析 XX"、"XX 产业链瓶颈"、"AI 瓶颈节点投资"、
-  "新能源紫苏叶"、"半导体瓶颈"、"机器人产业链分析"时触发。
-disable-model-invocation: false
-user-invocable: true
-allowed-tools: Read Write Bash Python mcp__cn-financial mcp__cn-mutual-fund mcp__tavily
-effort: high
+  紫苏叶主题瓶颈分析。输入热门概念（AI算力/新能源/半导体/机器人等）， 构建产业链图谱，用紫苏叶五因子模型评分瓶颈节点，推荐相关基金和股票。 移植自 Serenity股神紫苏叶理论（Bilibili BV1fT7z6QE2S）。
+  用户问"紫苏叶分析 XX"、"XX 产业链瓶颈"、"AI 瓶颈节点投资"、 "新能源紫苏叶"、"半导体瓶颈"、"机器人产业链分析"时触发。
 ---
+
 
 # 紫苏叶主题瓶颈分析
 

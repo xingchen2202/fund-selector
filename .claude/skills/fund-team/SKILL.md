@@ -1,13 +1,9 @@
 ---
 name: fund-team
 description: >
-  Team Lead 并行调度 4 大师视角 Agent，独立分析后综合研判
-  when_to_use: 用户询问相关基金研究问题时触发
-disable-model-invocation: false
-user-invocable: true
-allowed-tools: Read Write Bash Python mcp__cn-financial mcp__cn-mutual-fund mcp__tavily mcp__node_repl
-effort: high
+  Team Lead 并行调度 4 大师视角 Agent，独立分析后综合研判 when_to_use: 用户询问相关基金研究问题时触发
 ---
+
 
 
 > **架构**：Team Lead 并行调度 4 大师视角 Agent → 各自独立分析 → 冲突检测 → 综合研判

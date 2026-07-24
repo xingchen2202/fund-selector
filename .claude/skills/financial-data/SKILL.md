@@ -1,13 +1,9 @@
 ---
 name: financial-data
 description: >
-  对单一数据点进行跨来源验证，确保数据可信
-  when_to_use: 用户询问相关基金研究问题时触发
-disable-model-invocation: false
-user-invocable: true
-allowed-tools: Read Write Bash Python mcp__cn-financial mcp__cn-mutual-fund mcp__tavily mcp__node_repl
-effort: high
+  对单一数据点进行跨来源验证，确保数据可信 when_to_use: 用户询问相关基金研究问题时触发
 ---
+
 
 
 对单一数据点进行跨来源验证，确保数据可信。

@@ -1,19 +1,9 @@
 ---
 name: fund-weekly-report
 description: >
-  自动生成基金持仓周报。读�?portfolio.json，通过 AKShare 获取最新净值，
-  计算盈亏，搜索板块新闻，检查规则触发，生成完整报告文件�?  触发词：基金报告、周报、fund report、生成报告、查看持仓、持仓分析�?  基金净值、持仓盈亏、我的基金、portfolio report�?  只要用户�?生成报告"�?查看持仓"，即触发�?Skill�?when_to_use: >
-  用户想了解当前基金持仓盈亏状态时触发�?  包括：每周定期检查、手动触发分析、定投后更新确认�?  不触发场景：用户只是询问某只基金的信息（由普通对话处理）�?disable-model-invocation: false
-user-invocable: true
-context:
-  agent: general-purpose
-  allowed-tools:
-    - Read
-    - Write
-    - Bash
-    - Python
-effort: high
+  自动生成基金持仓周报。读�?portfolio.json，通过 AKShare 获取最新净值， 计算盈亏，搜索板块新闻，检查规则触发，生成完整报告文件�?  触发词：基金报告、周报、fund report、生成报告、查看持仓、持仓分析�?  基金净值、持仓盈亏、我的基金、portfolio report�?  只要用户�?生成报告"�?查看持仓"，即触发�?Skill�?when_to_use: > 用户想了解当前基金持仓盈亏状态时触发�?  包括：每周定期检查、手动触发分析、定投后更新确认�?  不触发场景：用户只是询问某只基金的信息（由普通对话处理）�?disable-model-invocation: false
 ---
+
 
 # 基金持仓周报 Skill
 

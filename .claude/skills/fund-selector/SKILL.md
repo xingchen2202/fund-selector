@@ -1,17 +1,10 @@
 ---
 name: fund-selector
 description: >
-  A 股公募基金投研助手（v2.0）。基于三层架构：Skill 层（19 个场景入口）、
-  Agent 层（4 大师视角分析 + 风险否决）、工具层（精度计算+数据验证+报告审计+约束校验）。
-  覆盖深度研究、财报分析、行业筛选、持仓管理、思维工具五大场景。
-when_to_use: >
-  用户问"买什么基金"、"XX 基金怎么样"、"推荐基金"、"持仓分析"、
-  "行业研究"、"经理画像"、"该卖了吗"、"写篇研报"等。
-disable-model-invocable: false
-user-invocable: true
-allowed-tools: Read Write Bash Python mcp__cn-financial mcp__cn-mutual-fund mcp__tavily mcp__node_repl
-effort: high
+  A 股公募基金投研助手（v2.0）。基于三层架构：Skill 层（19 个场景入口）、 Agent 层（4 大师视角分析 + 风险否决）、工具层（精度计算+数据验证+报告审计+约束校验）。 覆盖深度研究、财报分析、行业筛选、持仓管理、思维工具五大场景。
+  用户问"买什么基金"、"XX 基金怎么样"、"推荐基金"、"持仓分析"、 "行业研究"、"经理画像"、"该卖了吗"、"写篇研报"等。
 ---
+
 
 # Fund Selector v2.0 — A 股公募基金投研助手
 

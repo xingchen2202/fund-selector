@@ -1,13 +1,9 @@
 ---
 name: thesis-tracker
 description: >
-  定期检查已买入基金是否仍符合投资逻辑
-  when_to_use: 用户询问相关基金研究问题时触发
-disable-model-invocation: false
-user-invocable: true
-allowed-tools: Read Write Bash Python mcp__cn-financial mcp__cn-mutual-fund mcp__tavily mcp__node_repl
-effort: high
+  定期检查已买入基金是否仍符合投资逻辑 when_to_use: 用户询问相关基金研究问题时触发
 ---
+
 
 
 定期检查已买入基金是否仍符合投资逻辑。

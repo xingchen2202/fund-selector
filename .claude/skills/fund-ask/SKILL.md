@@ -1,13 +1,9 @@
 ---
 name: fund-ask
 description: >
-  模拟特定投资大师回答问题
-  when_to_use: 用户询问相关基金研究问题时触发
-disable-model-invocation: false
-user-invocable: true
-allowed-tools: Read Write Bash Python mcp__cn-financial mcp__cn-mutual-fund mcp__tavily mcp__node_repl
-effort: high
+  模拟特定投资大师回答问题 when_to_use: 用户询问相关基金研究问题时触发
 ---
+
 
 
 模拟特定投资大师（巴菲特/段永平/芒格/李录）回答问题。

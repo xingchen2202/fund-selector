@@ -1,13 +1,9 @@
 ---
 name: private-fund-research
 description: >
-  研究非公开募集的基金，使用替代数据和关联方分析
-  when_to_use: 用户询问相关基金研究问题时触发
-disable-model-invocation: false
-user-invocable: true
-allowed-tools: Read Write Bash Python mcp__cn-financial mcp__cn-mutual-fund mcp__tavily mcp__node_repl
-effort: high
+  研究非公开募集的基金，使用替代数据和关联方分析 when_to_use: 用户询问相关基金研究问题时触发
 ---
+
 
 
 研究非公开募集的基金（私募股权、私募基金、专项计划）。

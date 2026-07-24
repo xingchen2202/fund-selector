@@ -1,13 +1,9 @@
 ---
 name: news-pulse
 description: >
-  多 Agent 并行归因，10 分钟内输出涨跌原因
-  when_to_use: 用户询问相关基金研究问题时触发
-disable-model-invocation: false
-user-invocable: true
-allowed-tools: Read Write Bash Python mcp__cn-financial mcp__cn-mutual-fund mcp__tavily mcp__node_repl
-effort: high
+  多 Agent 并行归因，10 分钟内输出涨跌原因 when_to_use: 用户询问相关基金研究问题时触发
 ---
+
 
 
 多 Agent 并行归因，10 分钟内输出涨跌原因。

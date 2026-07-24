@@ -1,18 +1,10 @@
 ---
 name: fund-recommend
 description: >
-  筛选候选基金并分析组合影响。触发词：推荐基金、基金筛选、
-  fund recommend、有什么基金可以买、推荐、筛选基金。
-  用户想了解有哪些基金值得关注时触发。
-when_to_use: >
-  用户想在现有组合基础上新增基金时触发。
-  不触发：用户只是查询某只基金信息（普通对话处理）。
-  不触发：用户查看现有持仓（由fund-weekly-report处理）。
-disable-model-invocation: false
-user-invocable: true
-allowed-tools: Read Write Bash Python mcp__cn-financial mcp__cn-mutual-fund mcp__tavily mcp__node_repl
-effort: high
+  筛选候选基金并分析组合影响。触发词：推荐基金、基金筛选、 fund recommend、有什么基金可以买、推荐、筛选基金。 用户想了解有哪些基金值得关注时触发。
+  用户想在现有组合基础上新增基金时触发。 不触发：用户只是查询某只基金信息（普通对话处理）。 不触发：用户查看现有持仓（由fund-weekly-report处理）。
 ---
+
 
 # 基金筛选推荐 Skill
 

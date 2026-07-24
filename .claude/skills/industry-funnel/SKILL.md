@@ -1,13 +1,9 @@
 ---
 name: industry-funnel
 description: >
-  全市场多维度漏斗筛选：30-60 → ≤10 → 3
-  when_to_use: 用户询问相关基金研究问题时触发
-disable-model-invocation: false
-user-invocable: true
-allowed-tools: Read Write Bash Python mcp__cn-financial mcp__cn-mutual-fund mcp__tavily mcp__node_repl
-effort: high
+  全市场多维度漏斗筛选：30-60 → ≤10 → 3 when_to_use: 用户询问相关基金研究问题时触发
 ---
+
 
 
 全市场多维度漏斗筛选：30-60 → ≤10 → 3 精选，含否决轨迹。

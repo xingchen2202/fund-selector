@@ -167,7 +167,7 @@
 ```
 .claude/skills/fund-selector/
 ├── SKILL.md                    # 主索引（路由表 + 架构说明）
-├── skills/                     # 19 个 skill 定义
+├── references/                  # 19 个 skill 定义
 │   ├── fund-deep-research.md
 │   ├── fund-team.md
 │   ├── manager-deep-dive.md

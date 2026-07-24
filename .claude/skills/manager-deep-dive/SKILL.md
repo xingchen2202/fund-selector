@@ -1,13 +1,9 @@
 ---
 name: manager-deep-dive
 description: >
-  对基金经理进行深度研究：履历、风格、业绩归因、能力圈
-  when_to_use: 用户询问相关基金研究问题时触发
-disable-model-invocation: false
-user-invocable: true
-allowed-tools: Read Write Bash Python mcp__cn-financial mcp__cn-mutual-fund mcp__tavily mcp__node_repl
-effort: high
+  对基金经理进行深度研究：履历、风格、业绩归因、能力圈 when_to_use: 用户询问相关基金研究问题时触发
 ---
+
 
 
 对基金经理进行深度研究：履历、风格、业绩归因、能力圈。

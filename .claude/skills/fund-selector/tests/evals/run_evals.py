@@ -25,7 +25,7 @@ if sys.platform == "win32":
 
 REPO = Path(__file__).resolve().parent.parent.parent.parent.parent.parent
 EVALS = REPO / ".claude/skills/fund-selector/evals/evals.json"
-SKILLS_DIR = REPO / ".claude/skills/fund-selector/skills"
+SKILLS_DIR = REPO / ".claude/skills/fund-selector/references"
 TOOLS_DIR = REPO / ".claude/skills/fund-selector/tools"
 
 # 已知的 MCP 服务器前缀（引用校验用）

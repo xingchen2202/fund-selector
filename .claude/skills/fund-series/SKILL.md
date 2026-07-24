@@ -1,13 +1,9 @@
 ---
 name: fund-series
 description: >
-  为目标基金/行业生成 8 篇系列研报（约 120k 字）
-  when_to_use: 用户询问相关基金研究问题时触发
-disable-model-invocation: false
-user-invocable: true
-allowed-tools: Read Write Bash Python mcp__cn-financial mcp__cn-mutual-fund mcp__tavily mcp__node_repl
-effort: high
+  为目标基金/行业生成 8 篇系列研报（约 120k 字） when_to_use: 用户询问相关基金研究问题时触发
 ---
+
 
 
 为目标基金/行业生成 8 篇系列研报（约 120k 字，公众号可发）。

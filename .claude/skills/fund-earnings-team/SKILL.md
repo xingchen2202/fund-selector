@@ -1,13 +1,9 @@
 ---
 name: fund-earnings-team
 description: >
-  4 大师视角并行解读基金定期报告 + 编辑审阅
-  when_to_use: 用户询问相关基金研究问题时触发
-disable-model-invocation: false
-user-invocable: true
-allowed-tools: Read Write Bash Python mcp__cn-financial mcp__cn-mutual-fund mcp__tavily mcp__node_repl
-effort: high
+  4 大师视角并行解读基金定期报告 + 编辑审阅 when_to_use: 用户询问相关基金研究问题时触发
 ---
+
 
 
 4 大师视角并行解读基金定期报告 + 编辑审阅 → 公众号可发文章。

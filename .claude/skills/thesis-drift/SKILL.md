@@ -1,13 +1,9 @@
 ---
 name: thesis-drift
 description: >
-  区分事实变化 vs 价格变化 vs 措辞变化
-  when_to_use: 用户询问相关基金研究问题时触发
-disable-model-invocation: false
-user-invocable: true
-allowed-tools: Read Write Bash Python mcp__cn-financial mcp__cn-mutual-fund mcp__tavily mcp__node_repl
-effort: high
+  区分事实变化 vs 价格变化 vs 措辞变化 when_to_use: 用户询问相关基金研究问题时触发
 ---
+
 
 
 区分"事实变化"vs"价格变化"vs"措辞变化"，判断是否需要调仓。

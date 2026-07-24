@@ -1,13 +1,9 @@
 ---
 name: fund-article
 description: >
-  3 Agent 写作工厂：作者 → 编辑 → 审阅
-  when_to_use: 用户询问相关基金研究问题时触发
-disable-model-invocation: false
-user-invocable: true
-allowed-tools: Read Write Bash Python mcp__cn-financial mcp__cn-mutual-fund mcp__tavily mcp__node_repl
-effort: high
+  3 Agent 写作工厂：作者 → 编辑 → 审阅 when_to_use: 用户询问相关基金研究问题时触发
 ---
+
 
 
 3 Agent 写作工厂：作者 → 编辑 → 审阅，产出公众号可发文章。

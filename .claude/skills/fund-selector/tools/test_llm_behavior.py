@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent.parent.parent.parent
 if sys.platform == "win32":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
-SKILLS_DIR = ROOT / ".claude/skills/fund-selector/skills"
+SKILLS_DIR = ROOT / ".claude/skills/fund-selector/references"
 TOOLS_DIR = ROOT / ".claude/skills/fund-selector/tools"
 
 
