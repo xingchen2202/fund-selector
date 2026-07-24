@@ -1,12 +1,21 @@
 # Fund Selector — AI-Powered Mutual Fund Research Assistant for A-Shares
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![Version](https://img.shields.io/badge/version-v2.3-blue)
+![Tests](https://img.shields.io/badge/tests-200%2B-brightgreen)
+![Platform](https://img.shields.io/badge/platform-Windows%20%20%20Claude%20Code-lightgrey)
+![Python](https://img.shields.io/badge/python-3.8%2B-yellow)
+![Skills](https://img.shields.io/badge/skills-41-blue)
+
+**中文** | [English](README_EN.md)
+
 > "One person + Claude Code = A research team."
 
-**Fund Selector v2.0** is a Claude Code Skill collection for researching mainland China mutual funds (A-share 公募基金). Built on a three-layer architecture philosophy, it combines adversarial multi-perspective value investing methodology with AI agents, spanning deep research, earnings analysis, industry screening, portfolio management, and thinking tools.
+**Fund Selector v2.3** is a Claude Code Skill collection for researching mainland China mutual funds (A-share 公募基金). Built on a three-layer architecture philosophy, it combines adversarial multi-perspective value investing methodology with AI agents, spanning six scenarios: deep research, earnings analysis, industry screening, portfolio management, thinking tools, and theme bottleneck analysis.
 
-Powered by Claude Code + MCP (cn-financial / cn-mutual-fund) real-time data, with **64 automated tests passing** — ensuring every report's data rigor is verifiable.
+Powered by Claude Code + MCP (cn-financial / cn-mutual-fund) real-time data, with **200+ automated tests passing** — ensuring every report's data rigor is verifiable.
 
-[Why not just ask AI?](#why-not-just-ask-ai) · [Skills Overview (20)](#skills-overview-20) · [Quick Start](#quick-start) · [Architecture](#architecture) · [Test Coverage](#test-coverag
+[Why not just ask AI?](#why-not-just-ask-ai) · [Skills Overview (41)](#skills-overview-41) · [Quick Start](#quick-start) · [Data Quality & Fault Tolerance](#data-quality--fault-tolerance-v23) · [Architecture](#architecture) · [Test Coverage](#test-coverage)
 
 ---
 
@@ -99,13 +108,42 @@ A normal LLM outputs different formats each run. We ensure: **same input → str
 
 **6. Automated tests, not manual checking**
 
-64 test cases cover the full pipeline — refactoring has a safety net.
+200+ test cases cover the full pipeline — refactoring has a safety net.
 
 ```bash
 python .claude/skills/fund-selector/tests/agents/test_agents_v2.py
 python .claude/skills/fund-selector/tests/tools/test_tools.py
-# Result: 64/64 green
+# Result: 200+ tests green
 ```
+
+---
+
+## Data Quality & Fault Tolerance (v2.3)
+
+> 2026-07-24 Based on iteration-3 re-test audit, fixed 2 rule-layer vulnerabilities (P1-3 Manager Role Determination Anti-Fool + P2-1 Valuation Tool Failure Fallback).
+
+### Manager Role Determination Anti-Fool (New in v2.3)
+
+**Problem**: MCP returns manager order unstably (e.g., "郑晓辉 刘睿聪" → "刘睿聪 郑晓辉"). Taking the first name by order would misidentify the primary manager.
+
+**Fix**: Strengthened manager query fault-tolerance rules:
+
+1. **Prohibited** from determining primary manager by MCP return order
+2. **Must** query and compare each manager's cumulative tenure (days)
+3. Output must include determination basis: "After query, XX has N days > YY has M days, determining XX as primary manager"
+4. When gap < 10%, label as "dual-manager system, similar authority"
+
+### Valuation Tool Failure Fallback Chain (New in v2.3)
+
+**Problem**: `get_valuation_metrics` returns empty data for index codes; rules lacked fallback path on failure.
+
+**Fix**: 3-level fallback chain + strict prohibition on fabricating percentile numbers:
+
+| Priority | Tool | On Failure |
+|----------|------|-----------|
+| 1 | `get_valuation_metrics` | Fallback to Priority 2 |
+| 2 | `get_index_pe_pb` and other PE/PB tools | Fallback to Priority 3 |
+| 3 | `get_macro_pmi` + `get_macro_money_supply` + `get_north_bound_flow` | Qualitative judgment, label [⚠️ Valuation Data Unavailable] |
 
 ---
 
@@ -113,13 +151,13 @@ python .claude/skills/fund-selector/tests/tools/test_tools.py
 
 **Three-layer design philosophy**:
 
-- **Layer 1 — Skills**: 20 clear entry points abstracted by scenario: deep research, earnings analysis, industry screening, portfolio management, thinking tools, theme bottleneck analysis
+- **Layer 1 — Skills**: 41 clear entry points abstracted by scenario: deep research, earnings analysis, industry screening, portfolio management, thinking tools, theme bottleneck analysis
 - **Layer 2 — Agents**: Team-based skills (e.g., `/fund-team`, `/news-pulse`) use a Team Lead to parallel-dispatch 4 master-perspective agents — each independently searches MCP data, forms judgments, and challenges others, then synthesized by the Team Lead; lightweight skills bypass this layer and connect directly to tools for fast in-out
 - **Layer 3 — Tools**: Exact calculation (Decimal), real-time retrieval (MCP), report auditing (15% sampling) — ensuring every report's data rigor is verifiable
 
 ---
 
-## Skills Overview (20)
+## Skills Overview (41)
 
 ### Deep Research (5)
 
@@ -266,11 +304,11 @@ User triggers team-based skill
 
 | Layer | Tests | Status |
 |-------|-------|--------|
-| Agent | 5 | ✅ 5/5 |
-| Tools | 10 | ✅ 10/10 |
-| End-to-end | 5 | ✅ 5/5 |
-| Existing penetration+protection | 37 | ✅ 37/37 |
-| **Total** | **57** | **✅ All Green** |
+| Agent | 6 | ✅ 6/6 |
+| Tools | 10+ | ✅ All Green |
+| End-to-end | 5+ | ✅ All Green |
+| Data quality assertions (B1-B3) | 11 | ✅ 11/11 |
+| **Total** | **200+** | **✅ All Green** |
 
 Run tests:
 
@@ -363,7 +401,7 @@ An AI Agent framework for individual-stock value investing. We built upon its th
 | Global individual stocks (US/HK/CN stocks) | Focus on **A-share mutual funds** (equity/bond/money/QDII) |
 | 4-master-perspective Agent parallel reasoning | **Dual Agent (offense/defense)** + fast-rejection checklist |
 | Web-scraped data (Yahoo/Morningstar/Snowball) | **MCP real-time data interfaces** (cn-financial/cn-mutual-fund) |
-| 19 skills focused on stock research | 20 skills focused on **fund screening + portfolio management + DCA execution** |
+| 19 skills focused on stock research | 41 skills focused on **fund screening + portfolio management + DCA execution** |
 
 **Key difference**: ai-berkshire is a "stock-picking framework"; ours is a "fund-picking framework." We kept the three-layer soul but swapped data sources and scenario fit.
 
@@ -432,8 +470,8 @@ Phase 3 (Complete): Fast-rejection
 Phase 4 (Complete): Perilla penetration
   Borrow Serenity perilla bottleneck theory → create Perilla Index + penetration analysis
   
-Phase 5 (In Progress): Automated testing
-  64 test cases cover full pipeline (see "Test Coverage" section)
+Phase 5 (Complete): Automated testing
+  200+ test cases cover full pipeline (see "Test Coverage" section)
 ```
 
 ### Acknowledgments
@@ -450,6 +488,26 @@ Phase 5 (In Progress): Automated testing
 ## Disclaimer
 
 This project is for learning and research purposes only and does not constitute investment advice. Invest at your own risk. Always conduct your own due diligence (DYOR).
+
+---
+
+## Contributing
+
+Community contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+Before submitting, please run the full test suite (`tests/agents/test_agents_v2.py`, `tests/tools/test_tools.py`, etc.) and confirm all green to avoid breaking the regression safety net.
+
+---
+
+## Security
+
+If you discover a security vulnerability, please report it privately following the process in [SECURITY.md](SECURITY.md) (do not open a public Issue).
+
+---
+
+## Code of Conduct
+
+This project follows the [Contributor Covenant](https://www.contributor-covenant.org) code of conduct. See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for details.
 
 ---
 
